@@ -64,3 +64,53 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+# KampusLMS - Kelompok 05 (Kelas A)
+
+Proyek ini adalah implementasi tugas Modul 1 (Mengenal Laravel 12) untuk pengembangan purwarupa Sistem Informasi Manajemen Pembelajaran (KampusLMS).
+
+## Daftar Anggota
+
+| Nama Lengkap | NIM |
+| :--- | :--- |
+| Muhammad Syahid R. | [Isi NIM Syahid di sini] |
+| Ikhsyan | [Isi NIM Ikhsyan di sini] |
+| [Nama Anggota 3 jika ada] | [Isi NIM di sini] |
+ ## Cara Instalasi
+
+Ikuti langkah-langkah di bawah ini untuk menjalankan proyek secara lokal:
+
+1. **Clone repositori**
+   ```bash
+   git clone [URL_REPO_KELOMPOK_ANDA]
+   cd kampuslms-a-kelompok-05
+   ```
+
+2. **Install dependensi (Vendor)**
+   ```bash
+   composer install
+   ```
+
+3. **Siapkan pengaturan environment**
+   ```bash
+   cp .env.example .env
+   ```
+
+4. **Generate Application Key**
+   ```bash
+   php artisan key:generate
+   ```
+
+5. **Jalankan local server**
+   ```bash
+   php artisan serve
+   ```
+   Aplikasi dapat diakses melalui browser pada alamat `http://127.0.0.1:8000`.
+
+## Pembagian Peran
+
+| Nama Anggota | Peran / Tugas Spesifik (Modul 1) |
+| :--- | :--- |
+| **Muhammad Syahid R.** | Mengerjakan dokumentasi Checkpoint READ, pengujian tahap BREAK, dan merumuskan analisis alur request & keamanan (APP_DEBUG). |
+| **Ikhsyan** | [Isi peran Ikhsyan, misal: Membuat repositori awal, menyusun laporan struktur folder, dll] |
+| **[Nama Anggota 3]** | [Isi peran jika ada] |
