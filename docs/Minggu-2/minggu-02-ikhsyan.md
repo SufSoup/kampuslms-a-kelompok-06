@@ -212,10 +212,10 @@ GET|HEAD  courses/{course} ... courses.show › CourseController@show
 GET|HEAD  tentang ............. tentang › routes/web.php:10
 ```
 
-![alt text](photos/ikhsyan_build.route.png) <!-- SS terminal `php artisan route:list` -->
+![alt text](photos/ikhsyan_build.route.png) 
 
-![alt text](photos/ikhsyan_build.index.png) <!-- SS browser /courses -->
-![alt text](photos/ikhsyan_build.show.png) <!-- SS browser /courses/1 -->
+![alt text](photos/ikhsyan_build.index.png) 
+![alt text](photos/ikhsyan_build.show.png) 
 
 #### Kendala
 Saat pertama `npm run dev` muncul `vite: command not found` karena `node_modules` belum ada. Solusi: `npm install` dulu. Lalu `esbuild` perlu disetujui install script-nya (`npm install-scripts approve esbuild`), baru Vite jalan.
