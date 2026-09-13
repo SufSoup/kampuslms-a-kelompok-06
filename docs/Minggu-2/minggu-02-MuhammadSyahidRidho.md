@@ -1,65 +1,377 @@
-**Nama:Muhammad Syahid Ridho**
+#  Minggu 2 — Pemrograman Web
 
-**NIM:10241051**
+**Nama:** Muhammad Syahid Ridho  
+**NIM:** 10241051
 
 # READ
-## 1. Definisi Route (`routes/web.php`)
-* **Baris Kode:** 
+
+## 1. Menelusuri Route `/tentang`
+
+Pada `routes/web.php`, request menuju halaman `/tentang` ditangkap menggunakan route GET berikut:
+
 ```php
-  Route::get('/tentang', function () {
-    return view('tentang');});
+Route::get('/tentang', function () {
+    return view('tentang');
+});
 ```
-Baris kode yang menangkap permintaan menggunakan fungsi Route::get('/tentang', ...) untuk menerima akses masuk pada path /tentang.
 
-## 2. Penanganan Controller & Method (`PageController.php`)
+`Route::get()` menunjukkan bahwa route tersebut merespons HTTP GET. Ketika alamat `/tentang` dibuka melalui browser, fungsi anonim (*closure*) dijalankan dan hasilnya adalah view bernama `tentang`.
 
-* **Berkas Controller:** `app/Http/Controllers/PageController.php`
-* **Method:**
-  ```php
-  public function tentang() {
-      return view('tentang');
-  }
-  ```
-* **Analisis:** Controller menerima eksekusi dari route, memproses data jika diperlukan, lalu memerintahkan Laravel untuk merender file view.
+## 2. Hubungan Route dengan Controller
 
-## 3. Berkas View & Path Fisik
+Di tugas saya terdapat `PageController` dengan method:
 
-* **Nama View:** `tentang`
-* **Path Persis:** `resources/views/tentang.blade.php`
-* **Analisis:** Menyediakan struktur antarmuka pengguna (HTML/Blade) spesifik untuk halaman "Tentang" yang dibungkus layout modular.
+```php
+public function tentang()
+{
+    return view('tentang');
+}
+```
 
-## 4. Pembungkus Layout (Layout Component)
+Berkasnya berada di:
 
-* **Komponen:** `<x-layout>`
-* **Path Komponen:** `resources/views/components/layout.blade.php`
-* **Analisis:** Berkas `tentang.blade.php` dibungkus oleh komponen modular Blade untuk menjaga konsistensi struktur HTML dan navigasi global.
+```text
+app/Http/Controllers/PageController.php
+```
 
-## 5. Verifikasi Perintah Artisan
+Method `tentang()` bertugas mengembalikan view. Namun, dari route yang sedang diamati, `/tentang` masih menggunakan closure secara langsung di `routes/web.php`, sehingga route tersebut belum memanggil `PageController`.
 
-* **Perintah Terminal:**
-  ```bash
-  php artisan route:list --path=tentang
-  ```
-    ```bash
-   GET|HEAD       tentang ................................................................................................................... routes/web.php:6
+Jika ingin dipisahkan dengan pola controller, bentuk route-nya dapat diarahkan menjadi:
 
-                                                                                                                                           Showing [1] routes
-  ```
-* **Hasil Verifikasi:** Hasil terminal tersebut mengonfirmasi bahwa rute /tentang telah terdaftar dan aktif pada berkas routes/web.php. Output ini menunjukkan rute siap menerima metode HTTP GET dan HEAD, sekaligus memvalidasi bahwa tepat satu rute ditemukan sesuai kriteria pencarian.
+```php
+Route::get('/tentang', [PageController::class, 'tentang']);
+```
 
+Pemisahan ini membuat file route berfokus pada pemetaan URL, sedangkan proses halaman ditangani controller.
+
+## 3. View yang Digunakan
+
+Pemanggilan:
+
+```php
+return view('tentang');
+```
+
+mengarah ke:
+
+```text
+resources/views/tentang.blade.php
+```
+
+Jadi `tentang` bukan nama folder atau URL, melainkan nama view yang dicari Laravel di dalam direktori `resources/views`.
+
+## 4. Layout Halaman
+
+Untuk halaman yang sudah diperbarui, komponen layout digunakan melalui:
+
+```blade
+<x-layout>
+    ...
+</x-layout>
+```
+
+File komponennya adalah:
+
+```text
+resources/views/components/layout.blade.php
+```
+
+Penggunaan komponen ini membuat bagian umum seperti struktur HTML dan navigasi tidak perlu dibuat ulang pada setiap halaman. Isi halaman ditempatkan pada bagian slot komponen.
+
+## 5. Pemeriksaan Route dengan Artisan
+
+Untuk memastikan route `/tentang` benar-benar terdaftar, digunakan:
+
+```bash
+php artisan route:list --path=tentang
+```
+
+Hasil pemeriksaan menunjukkan:
+
+```text
+GET|HEAD  tentang  ................................................ routes/web.php:6
+
+Showing [1] routes
+```
+
+Dari hasil tersebut dapat disimpulkan bahwa Laravel mengenali satu route untuk `/tentang`, dengan metode GET dan HEAD. Pemeriksaan ini berguna untuk memastikan definisi route yang ditulis di kode sudah terbaca oleh aplikasi.
+
+---
+
+# BREAK
+
+## Eksperimen Delapan Kerusakan
+
+| No. | Perubahan yang Dicoba | Perkiraan Sebelum Diuji | Hasil / Pembelajaran |
+|---|---|---|---|
+| 1 | Mengubah route `/courses` dari `GET` menjadi `POST` | Saat alamat dibuka dari browser, request GET tidak akan menemukan route yang cocok. | Laravel menghasilkan **405 Method Not Allowed**. Artinya URL-nya ada, tetapi metode HTTP yang digunakan tidak sesuai dengan route. |
+| 2 | Mengarahkan `view()` ke nama view yang tidak tersedia | Laravel akan mencoba mencari file Blade tersebut dan gagal. | Muncul **View [nama-view] not found**. Ini menunjukkan nama pada `view()` harus sesuai dengan struktur file di `resources/views`. |
+| 3 | Menghapus nama route `courses.show` tetapi tetap memanggil `route('courses.show')` | Helper `route()` tidak lagi mempunyai nama route yang bisa dicari. | Terjadi **RouteNotFoundException** karena route bernama `courses.show` sudah tidak terdaftar. |
+| 4 | Menempatkan route `/courses/{course}` sebelum route `/courses/create` | Kata `create` berpotensi dianggap sebagai isi parameter `{course}`. | Route dinamis dapat mengambil `/courses/create` lebih dahulu. Ini memperlihatkan bahwa **susunan route berpengaruh terhadap pencocokan URL**. |
+| 5 | Mengganti output `{{ $nama }}` dengan `{!! $nama !!}` dan memasukkan tag script | HTML yang sebelumnya diamankan oleh escaping akan ditampilkan sebagai HTML mentah. | Script dapat dijalankan di browser. Percobaan ini memperlihatkan risiko **Cross-Site Scripting (XSS)** dan alasan output dari input pengguna sebaiknya tetap menggunakan `{{ }}`. |
+| 6 | Menghapus `@vite(...)` dari layout | File CSS dan JavaScript yang disediakan melalui Vite tidak lagi dipanggil oleh halaman. | Tampilan dapat kehilangan styling dan fungsi frontend. Ini menunjukkan layout juga berperan dalam memuat aset aplikasi. |
+| 7 | Menghentikan `npm run dev` kemudian membuka halaman kembali | Aset yang sebelumnya dilayani server development tidak tersedia seperti sebelumnya. | Asset frontend dapat gagal dimuat. Dari sini terlihat bahwa Vite development server dibutuhkan saat aplikasi mengandalkan proses development secara langsung. |
+| 8 | Memanggil `route('courses.show')` tanpa memberikan nilai `{course}` | URL dinamis tidak dapat dibentuk karena ada parameter yang wajib. | Laravel memberikan error **Missing required parameter**. Helper `route()` membutuhkan nilai parameter untuk menghasilkan URL lengkap. |
+
+### Kesimpulan dari BREAK
+
+Percobaan tersebut menunjukkan bahwa bagian-bagian Laravel saling bergantung. Route menentukan bagaimana request diarahkan, controller mengatur proses, view menampilkan hasil, sedangkan helper seperti `route()` dan `@vite()` membantu aplikasi terhubung dengan bagian lainnya.
+
+Percobaan nomor 5 juga menjadi pengingat bahwa cara menampilkan data bukan hanya masalah tampilan. Penggunaan escaping pada Blade berhubungan langsung dengan keamanan aplikasi.
+
+---
 
 # BUILD
 
+## 1. Membuat Layout Komponen
 
-## Tabel Eksperimen Delapan Kerusakan
+File:
 
-| # | Bagian yang Dirusak | Prediksi Saya | Yang Dipelajari / Hasil Nyata |
-|---|---|---|---|
-| 1 | Ubah `Route::get` menjadi `Route::post` pada route daftar mata kuliah (`/courses`) | Halaman tidak bisa diakses lewat browser secara normal karena browser melakukan *request* tipe `GET`. | **Method HTTP tidak cocok (405 Method Not Allowed)**: Laravel menolak *request* karena metode HTTP dari browser tidak sesuai dengan definisi rute yang diatur. |
-| 2 | Ubah nama view di `return view('courses.index')` menjadi view yang tidak ada (misal: `courses.salah`) | Muncul halaman error bawaan Laravel karena file template tidak ditemukan. | **Exception ViewNotFound**: Laravel melemparkan `InvalidArgumentException` karena berkas `.blade.php` tujuan gagal ditemukan di dalam direktori `resources/views`. |
-| 3 | Hapus `->name('courses.show')`, lalu muat halaman yang memakai helper `route('courses.show')` | Halaman *index* atau *detail* akan mengalami error saat fungsi helper dijalankan. | **Kenapa nama route wajib**: Helper `route()` bergantung pada identifikasi nama unik untuk merangkai URI. Tanpa nama, Laravel memicu `RouteNotFoundException`. |
-| 4 | Pindahkan route `Route::get('/courses/{course}', ...)` ke ATAS `Route::get('/courses/create', ...)` | Halaman `/courses/create` akan gagal menampilkan form tambah data. | **Urutan route menentukan**: Laravel mengevaluasi rute dari atas ke bawah. Kata `create` akan dianggap sebagai nilai parameter `{course}`, bukan string statis. |
-| 5 | Ganti `{{ $nama }}` menjadi `{!! $nama !!}`, lalu isi data dengan `<script>alert('XSS')</script>` | Skrip JavaScript akan tereksekusi langsung di dalam browser pengguna berupa pop-up *alert*. | **XSS nyata di layar sendiri**: Tanpa *escaping* otomatis dari kurung kurawal ganda, browser mengeksekusi tag HTML/JS mentah, membuktikan celah keamanan *Cross-Site Scripting*. |
-| 6 | Hapus `@vite(...)` dari komponen layout utama (`layout.blade.php`) | Halaman web kehilangan seluruh berkas gaya (*styling* CSS) dan fungsi JavaScript interaktif. | **Aset tidak termuat**: Hubungan antara Laravel dengan server aset Vite terputus, sehingga manifes aset gagal disuntikkan ke tag `<head>` HTML. |
-| 7 | Hentikan proses terminal `npm run dev` lalu muat ulang halaman web | Halaman gagal memuat aset frontend atau koneksi ke server lokal terputus. | **Beda dev server vs build**: Development server berhenti melayani kompilasi *on-the-fly* dan *Hot Module Replacement (HMR)* untuk file aset. |
-| 8 | Panggil `route('courses.show')` di dalam view tanpa mengirim parameter ID/course | Terjadi error pada aplikasi karena fungsi pembangun URL kekurangan argumen. | **Missing required parameter**: Helper `route()` gagal merangkai URL dinamis secara utuh karena parameter wajib `{course}` tidak disertakan saat pemanggilan. |
+```text
+resources/views/components/layout.blade.php
+```
+
+Contoh implementasi:
+
+```php
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{{ $title ?? 'KampusLMS' }}</title>
+
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+</head>
+
+<body>
+    <header>
+        <h1>KampusLMS</h1>
+
+        <nav>
+            <a href="{{ url('/') }}">Dashboard</a>
+            <a href="{{ route('courses.index') }}">Mata Kuliah</a>
+            <a href="{{ route('tentang') }}">Tentang</a>
+        </nav>
+    </header>
+
+    <main>
+        {{ $slot }}
+    </main>
+</body>
+</html>
+```
+
+Saya menempatkan navigasi di satu komponen agar halaman lain cukup memakai `<x-layout>`. Dengan begitu, perubahan navbar tidak perlu dilakukan berulang kali.
+
+## 2. Membuat `CourseController`
+
+File:
+
+```text
+app/Http/Controllers/CourseController.php
+```
+
+Data masih dibuat dalam bentuk array karena database belum digunakan pada tahap ini.
+
+```php
+<?php
+
+namespace App\Http\Controllers;
+
+class CourseController extends Controller
+{
+    private array $courses = [
+        [
+            'id' => 1,
+            'code' => 'SI2514024',
+            'name' => 'Pemrograman Web',
+            'sks' => 3,
+            'lecturer' => 'Dosen A',
+        ],
+        [
+            'id' => 2,
+            'code' => 'SI2514025',
+            'name' => 'Basis Data',
+            'sks' => 3,
+            'lecturer' => 'Dosen B',
+        ],
+        [
+            'id' => 3,
+            'code' => 'SI2514026',
+            'name' => 'Jaringan Komputer',
+            'sks' => 2,
+            'lecturer' => 'Dosen C',
+        ],
+    ];
+
+    public function index()
+    {
+        return view('courses.index', [
+            'courses' => $this->courses,
+        ]);
+    }
+
+    public function show(int $id)
+    {
+        $course = collect($this->courses)->firstWhere('id', $id);
+
+        if ($course === null) {
+            abort(404);
+        }
+
+        return view('courses.show', [
+            'course' => $course,
+        ]);
+    }
+}
+```
+
+Method `index()` mengirim seluruh data ke halaman daftar. Sementara `show()` mencari satu data berdasarkan ID. Jika ID tidak ditemukan, aplikasi diarahkan ke halaman 404.
+
+## 3. Halaman Daftar Mata Kuliah
+
+File:
+
+```text
+resources/views/courses/index.blade.php
+```
+
+```blade
+<x-layout title="Mata Kuliah">
+
+    <h2>Daftar Mata Kuliah</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Kode</th>
+                <th>Nama Mata Kuliah</th>
+                <th>SKS</th>
+                <th>Dosen</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @forelse ($courses as $course)
+                <tr>
+                    <td>{{ $course['code'] }}</td>
+                    <td>
+                        <a href="{{ route('courses.show', $course['id']) }}">
+                            {{ $course['name'] }}
+                        </a>
+                    </td>
+                    <td>{{ $course['sks'] }}</td>
+                    <td>{{ $course['lecturer'] }}</td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="4">Belum ada mata kuliah.</td>
+                </tr>
+            @endforelse
+        </tbody>
+    </table>
+
+</x-layout>
+```
+
+Saya menggunakan `@forelse` agar halaman tetap memiliki tampilan yang jelas ketika data kosong. Link detail dibuat dengan `route()` supaya URL tidak ditulis secara manual.
+
+## 4. Halaman Detail
+
+File:
+
+```text
+resources/views/courses/show.blade.php
+```
+
+```blade
+<x-layout title="Detail Mata Kuliah">
+
+    <h2>{{ $course['name'] }}</h2>
+
+    <dl>
+        <dt>Kode</dt>
+        <dd>{{ $course['code'] }}</dd>
+
+        <dt>Jumlah SKS</dt>
+        <dd>{{ $course['sks'] }}</dd>
+
+        <dt>Dosen Pengampu</dt>
+        <dd>{{ $course['lecturer'] }}</dd>
+    </dl>
+
+    <a href="{{ route('courses.index') }}">
+        Kembali ke daftar mata kuliah
+    </a>
+
+</x-layout>
+```
+
+Halaman detail menerima satu data `$course` dari controller. Semua data ditampilkan menggunakan `{{ }}` sehingga Blade tetap melakukan escaping terhadap output.
+
+## 5. Menambahkan Route Mata Kuliah
+
+Pada `routes/web.php`:
+
+```php
+use App\Http\Controllers\CourseController;
+
+Route::get('/tentang', function () {
+    return view('tentang');
+})->name('tentang');
+
+Route::get('/courses', [CourseController::class, 'index'])
+    ->name('courses.index');
+
+Route::get('/courses/{course}', [CourseController::class, 'show'])
+    ->name('courses.show');
+```
+
+Route `/courses` diletakkan sebelum `/courses/{course}` agar URL daftar tidak salah dibaca sebagai parameter `{course}`.
+
+## 6. Halaman 404
+
+File:
+
+```text
+resources/views/errors/404.blade.php
+```
+
+```blade
+<x-layout title="404 - Tidak Ditemukan">
+
+    <h2>Halaman Tidak Ditemukan</h2>
+
+    <p>
+        Data atau halaman yang diminta tidak tersedia.
+    </p>
+
+    <a href="{{ url('/') }}">Kembali ke Dashboard</a>
+
+</x-layout>
+```
+
+Halaman ini memberikan tampilan yang lebih jelas ketika resource yang diminta tidak tersedia.
+
+## 7. Verifikasi Akhir
+
+Setelah route dibuat, pengecekan dapat dilakukan dengan:
+
+```bash
+php artisan route:list
+```
+
+Route yang diharapkan antara lain:
+
+```text
+GET|HEAD   courses
+GET|HEAD   courses/{course}
+GET|HEAD   tentang
+```
+
+Dengan hasil tersebut, dapat diperiksa bahwa daftar mata kuliah memiliki route sendiri dan halaman detail menggunakan route dinamis.
+
+---
+
