@@ -20,7 +20,7 @@ public function index()
     return view('courses.index', compact('courses', 'nama'));
 }
 
-    public function show(int $id)
+    public function show(string $id)
     {
         $course = collect($this->courses)->firstWhere('id', $id);
 
