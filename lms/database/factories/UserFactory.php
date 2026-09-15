@@ -4,7 +4,6 @@ namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
@@ -26,10 +25,44 @@ class UserFactory extends Factory
         return [
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
-            'remember_token' => Str::random(10),
+            'role' => 'mahasiswa',
+            'nim_nip' => fake()->unique()->numerify('##########'),
+            'email_verified_at' => now(),
         ];
+    }
+
+    /**
+     * Indicate that the user is an admin.
+     */
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'admin',
+            'nim_nip' => null,
+        ]);
+    }
+
+    /**
+     * Indicate that the user is a lecturer.
+     */
+    public function dosen(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'dosen',
+            'nim_nip' => fake()->unique()->numerify('##########'),
+        ]);
+    }
+
+    /**
+     * Indicate that the user is a student.
+     */
+    public function mahasiswa(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'mahasiswa',
+            'nim_nip' => fake()->unique()->numerify('##########'),
+        ]);
     }
 
     /**
