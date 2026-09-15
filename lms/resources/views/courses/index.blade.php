@@ -1,4 +1,6 @@
+-- Active: 1758692748681@@127.0.0.1@3306
 <x-layout title="Daftar Mata Kuliah">
+    <p>{{    $nama }}</p>
     <h1>Daftar Mata Kuliah</h1>
 
     <table>
