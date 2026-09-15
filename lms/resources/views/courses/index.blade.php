@@ -3,6 +3,13 @@
     <p>{{    $nama }}</p>
     <h1>Daftar Mata Kuliah</h1>
 
+    <h2>Demo output Blade</h2>
+    <p>Dengan <code>{{ $nama }}</code>:</p>
+    <p>{{ $nama }}</p>
+
+    {{-- <p>Dengan <code>{!! $nama !!}</code>:</p>
+    <p>{!! $nama !!}</p> --}}
+
     <table>
         <thead>
             <tr>
