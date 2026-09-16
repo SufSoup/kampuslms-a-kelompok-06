@@ -65,12 +65,14 @@ jobs:
         run: |
           cp .env.example .env
           php artisan key:generate
-          sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=mysql/' .env
-          sed -i 's/DB_HOST=.*/DB_HOST=127.0.0.1/' .env
-          sed -i 's/DB_PORT=.*/DB_PORT=3306/' .env
-          sed -i 's/DB_DATABASE=.*/DB_DATABASE=kampuslms_test/' .env
-          sed -i 's/DB_USERNAME=.*/DB_USERNAME=root/' .env
-          sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=password/' .env
+          # Tulis ulang koneksi DB langsung — .env.example pakai SQLite
+          # dan variabel DB_* ter-comment, jadi sed tidak bisa mengganti
+          echo "DB_CONNECTION=mysql"       >> .env
+          echo "DB_HOST=127.0.0.1"         >> .env
+          echo "DB_PORT=3306"              >> .env
+          echo "DB_DATABASE=kampuslms_test" >> .env
+          echo "DB_USERNAME=root"          >> .env
+          echo "DB_PASSWORD=password"      >> .env
 
       # ---------- migrate:fresh --seed ----------
       - name: migrate:fresh --seed
