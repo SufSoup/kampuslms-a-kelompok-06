@@ -15,7 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('submission_id')
                 ->unique()
-                ->constrained('submissions');
+                ->constrained('submissions')
+                ->cascadeOnDelete();
             $table->foreignId('graded_by')
                 ->constrained('users');
             $table->decimal('score');
