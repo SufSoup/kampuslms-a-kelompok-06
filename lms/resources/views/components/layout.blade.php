@@ -10,6 +10,7 @@
     <nav>
         <a href="{{ url('/') }}">Dashboard</a>
         <a href="{{ route('courses.index') }}">Mata Kuliah</a>
+        <a href="{{ route('users.index') }}">Pengguna</a>
         <a href="{{ route('tentang') }}">Tentang</a>
     </nav>
 

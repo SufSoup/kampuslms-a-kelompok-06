@@ -29,7 +29,7 @@ class Course extends Model
 
     public function lecturer(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'lecturer_id');
+        return $this->belongsTo(User::class, 'lecturer_id')->withTrashed();
     }
 
     public function students(): BelongsToMany
