@@ -1,12 +1,300 @@
-@import 'tailwindcss';
+/* ============================================================
+   KampusLMS — Apple-style Monochrome Design System
+   5 colors, 1 font, 3 weights. That's it.
+   ============================================================ */
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
-@source "../**/*.blade.php";
-@source "../**/*.js";
-@source "../**/*.vue";
+/* --- Reset & Base ------------------------------------------ */
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 
-@theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+html {
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+    font-size: 17px;
+    line-height: 1.6;
+    color: #1D1D1F;
+    background: #FFFFFF;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* --- Layout (nav + main) ----------------------------------- */
+nav {
+    display: flex;
+    gap: 32px;
+    align-items: center;
+    padding: 16px 48px;
+    background: #F5F5F7;
+    border-bottom: 1px solid #E0E0E0;
+}
+
+nav a {
+    color: #1D1D1F;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 14px;
+    letter-spacing: -0.01em;
+    transition: color 0.2s;
+}
+
+nav a:hover {
+    color: #6E6E73;
+}
+
+main {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 64px 48px;
+}
+
+/* --- Typography -------------------------------------------- */
+h1 {
+    font-size: 48px;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin-bottom: 32px;
+}
+
+p {
+    color: #1D1D1F;
+    margin-bottom: 12px;
+}
+
+small {
+    color: #6E6E73;
+    font-size: 12px;
+}
+
+/* --- Links (secondary style by default) -------------------- */
+main a {
+    color: #1D1D1F;
+    text-decoration: none;
+    font-weight: 500;
+    border-bottom: 1px solid #6E6E73;
+    padding-bottom: 1px;
+    transition: border-color 0.2s;
+}
+
+main a:hover {
+    border-bottom-color: #1D1D1F;
+}
+
+main > a + a {
+    margin-left: 16px;
+}
+
+/* "Tambah" links → pill button style */
+h1 + p + a,
+h1 ~ a[href*="create"] {
+    display: inline-block;
+    background: #000000;
+    color: #FFFFFF;
+    border: none;
+    border-bottom: none;
+    border-radius: 980px;
+    padding: 10px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    margin-bottom: 32px;
+}
+
+h1 + p + a:hover,
+h1 ~ a[href*="create"]:hover {
+    opacity: 0.85;
+    border-bottom: none;
+}
+
+/* --- Success message --------------------------------------- */
+main > p:first-of-type {
+    background: #F5F5F7;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 14px;
+    color: #1D1D1F;
+    margin-bottom: 24px;
+}
+
+/* --- Tables ------------------------------------------------ */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 24px;
+}
+
+thead {
+    border-bottom: 1px solid #E0E0E0;
+}
+
+th {
+    text-align: left;
+    font-weight: 500;
+    font-size: 12px;
+    color: #6E6E73;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 12px 16px;
+}
+
+td {
+    padding: 16px;
+    font-size: 15px;
+    border-bottom: 1px solid #F5F5F7;
+    vertical-align: middle;
+}
+
+tr:hover td {
+    background: #F5F5F7;
+}
+
+td:last-child {
+    white-space: nowrap;
+}
+
+td a {
+    display: inline-flex;
+    align-items: center;
+    font-size: 14px;
+    vertical-align: middle;
+    line-height: 1;
+}
+
+td form {
+    display: inline-flex !important;
+    align-items: center;
+    vertical-align: middle;
+    margin-left: 14px;
+    line-height: 1;
+}
+
+/* --- Buttons (pill) ---------------------------------------- */
+button {
+    display: inline-block;
+    background: #000000;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 980px;
+    padding: 8px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+button:hover {
+    opacity: 0.85;
+}
+
+/* Delete button → outline style */
+td button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    color: #1D1D1F;
+    border: 1px solid #E0E0E0;
+    font-size: 13px;
+    line-height: 1;
+    padding: 6px 16px;
+    vertical-align: middle;
+}
+
+td button:hover {
+    background: #1D1D1F;
+    color: #FFFFFF;
+    border-color: #1D1D1F;
+}
+
+/* --- Forms ------------------------------------------------- */
+form {
+    max-width: 480px;
+}
+
+label {
+    display: block;
+    font-weight: 500;
+    font-size: 13px;
+    color: #6E6E73;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 6px;
+    margin-top: 24px;
+}
+
+label:first-of-type {
+    margin-top: 0;
+}
+
+input,
+textarea,
+select {
+    display: block;
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 16px;
+    font-family: inherit;
+    color: #1D1D1F;
+    background: #FFFFFF;
+    border: 1px solid #E0E0E0;
+    border-radius: 12px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    border-color: #1D1D1F;
+}
+
+textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236E6E73' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+}
+
+form button[type="submit"] {
+    margin-top: 32px;
+    padding: 12px 32px;
+    font-size: 16px;
+}
+
+/* --- Error list -------------------------------------------- */
+ul:has(li) {
+    background: #F5F5F7;
+    border: 1px solid #E0E0E0;
+    border-radius: 12px;
+    padding: 16px 16px 16px 36px;
+    margin-bottom: 24px;
+}
+
+ul li {
+    font-size: 14px;
+    color: #1D1D1F;
+    margin-bottom: 4px;
+}
+
+/* --- "Kembali" / "Batal" links ----------------------------- */
+main > a:last-child {
+    display: inline-block;
+    margin-top: 24px;
+    font-size: 14px;
+    color: #6E6E73;
+    border-bottom-color: transparent;
+}
+
+main > a:last-child:hover {
+    color: #1D1D1F;
+    border-bottom-color: #1D1D1F;
 }
