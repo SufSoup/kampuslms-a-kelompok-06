@@ -2,30 +2,88 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Course;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class CourseController extends Controller
 {
-    // data statis sementara, database baru minggu 3
-    private array $courses = [
-        ['id' => 1, 'code' => 'SI2514024', 'name' => 'Pemrograman Web', 'sks' => 3, 'lecturer' => 'Dosen A'],
-        ['id' => 2, 'code' => 'SI2514025', 'name' => 'Basis Data', 'sks' => 3, 'lecturer' => 'Dosen B'],
-        ['id' => 3, 'code' => 'SI2514026', 'name' => 'Jaringan Komputer', 'sks' => 2, 'lecturer' => 'Dosen C'],
-    ];
-
-public function index()
-{
-    $courses = $this->courses;
-    $nama = '<script>alert("XSS")</script>';
-    return view('courses.index', compact('courses', 'nama'));
-}
-
-    public function show(string $id)
+    public function index()
     {
-        $course = collect($this->courses)->firstWhere('id', $id);
+        $courses = Course::with('lecturer')->latest()->get();
 
-        abort_if($course === null, 404);
+        return view('courses.index', compact('courses'));
+    }
+
+    public function create()
+    {
+        $lecturers = User::where('role', 'dosen')->orderBy('name')->get();
+
+        return view('courses.create', compact('lecturers'));
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'code' => ['required', 'string', 'max:255', 'unique:courses,code'],
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['required', 'string'],
+            'sks' => ['required', 'integer', 'min:1', 'max:255'],
+            'lecturer_id' => ['required', 'exists:users,id'],
+            'status' => ['required', Rule::in(['draft', 'active', 'archived'])],
+        ]);
+
+        $lecturerId = $validated['lecturer_id'];
+        unset($validated['lecturer_id']);
+
+        $course = new Course();
+        $course->fill($validated);
+        $course->lecturer_id = $lecturerId;
+        $course->save();
+
+        return redirect()->route('courses.index')->with('success', 'Mata kuliah berhasil dibuat.');
+    }
+
+    public function show(Course $course)
+    {
+        $course->load('lecturer');
 
         return view('courses.show', compact('course'));
+    }
+
+    public function edit(Course $course)
+    {
+        $lecturers = User::where('role', 'dosen')->orderBy('name')->get();
+
+        return view('courses.edit', compact('course', 'lecturers'));
+    }
+
+    public function update(Request $request, Course $course)
+    {
+        $validated = $request->validate([
+            'code' => ['required', 'string', 'max:255', Rule::unique('courses', 'code')->ignore($course->id)],
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['required', 'string'],
+            'sks' => ['required', 'integer', 'min:1', 'max:255'],
+            'lecturer_id' => ['required', 'exists:users,id'],
+            'status' => ['required', Rule::in(['draft', 'active', 'archived'])],
+        ]);
+
+        $lecturerId = $validated['lecturer_id'];
+        unset($validated['lecturer_id']);
+
+        $course->fill($validated);
+        $course->lecturer_id = $lecturerId;
+        $course->save();
+
+        return redirect()->route('courses.show', $course)->with('success', 'Mata kuliah berhasil diperbarui.');
+    }
+
+    public function destroy(Course $course)
+    {
+        $course->delete();
+
+        return redirect()->route('courses.index')->with('success', 'Mata kuliah berhasil dihapus.');
     }
 }
