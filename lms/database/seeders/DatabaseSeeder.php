@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Assignment;
 use App\Models\Course;
 use App\Models\Grade;
+use App\Models\Material;
 use App\Models\Submission;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -112,7 +113,27 @@ class DatabaseSeeder extends Seeder
 
         /*
          * ============================================================
-         * 4. ASSIGNMENTS
+         * 4. MATERIALS
+         * ============================================================
+         */
+
+        foreach ($courses as $course) {
+            // 2-4 materi per course, campuran file dan link
+            $materialCount = fake()->numberBetween(2, 4);
+
+            for ($i = 0; $i < $materialCount; $i++) {
+                Material::factory()
+                    ->{fake()->boolean() ? 'file' : 'link'}()
+                    ->create([
+                        'course_id' => $course->id,
+                        'uploaded_by' => $course->lecturer_id,
+                    ]);
+            }
+        }
+
+        /*
+         * ============================================================
+         * 5. ASSIGNMENTS
          * ============================================================
          */
 
@@ -149,7 +170,7 @@ class DatabaseSeeder extends Seeder
 
         /*
          * ============================================================
-         * 5. SUBMISSIONS
+         * 6. SUBMISSIONS
          * ============================================================
          */
 
@@ -195,7 +216,7 @@ class DatabaseSeeder extends Seeder
 
         /*
          * ============================================================
-         * 6. GRADES
+         * 7. GRADES
          * ============================================================
          */
 
@@ -227,7 +248,7 @@ class DatabaseSeeder extends Seeder
 
         /*
          * ============================================================
-         * 7. DEMO ACCOUNT
+         * 8. DEMO ACCOUNT
          * ============================================================
          *
          * Akun demo sudah dibuat di atas sebagai bagian dari
