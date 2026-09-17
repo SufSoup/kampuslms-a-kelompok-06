@@ -1,4 +1,3 @@
--- Active: 1758692748681@@127.0.0.1@3306
 <x-layout title="Daftar Mata Kuliah">
     <h1>Daftar Mata Kuliah</h1>
 
@@ -29,7 +28,7 @@
                     <td>{{ $course->lecturer?->name ?? 'Dosen tidak tersedia' }}</td>
                     <td>
                         <a href="{{ route('courses.edit', $course) }}">Edit</a>
-                        <form method="POST" action="{{ route('courses.destroy', $course) }}" style="display: inline">
+                        <form method="POST" action="{{ route('courses.destroy', $course) }}" style="display: inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data ini?');">
                             @csrf
                             @method('DELETE')
                             <button type="submit">Hapus</button>
