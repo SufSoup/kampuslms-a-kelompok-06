@@ -1,0 +1,90 @@
+name: KampusLMS CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: kampuslms_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -ppassword"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      # ---------- Checkout ----------
+      - name: Checkout kode
+        uses: actions/checkout@v4
+
+      # ---------- Cek .env tidak ter-commit ----------
+      - name: Pastikan .env tidak ter-commit
+        run: |
+          if git ls-files --error-unmatch lms/.env 2>/dev/null; then
+            echo "::error::.env ter-commit di dalam repositori! Hapus dengan: git rm --cached lms/.env"
+            exit 1
+          fi
+          echo "✅ .env tidak ter-commit."
+
+      # ---------- Setup PHP ----------
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo, pdo_mysql, xml, ctype, json, tokenizer, bcmath
+          coverage: none
+
+      # ---------- Cache Composer ----------
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: lms/vendor
+          key: composer-${{ hashFiles('lms/composer.lock') }}
+          restore-keys: composer-
+
+      # ---------- Install dependensi ----------
+      - name: Composer install
+        working-directory: ./lms
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      # ---------- Siapkan environment ----------
+      - name: Siapkan .env untuk testing
+        working-directory: ./lms
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          # Tulis ulang koneksi DB langsung — .env.example pakai SQLite
+          # dan variabel DB_* ter-comment, jadi sed tidak bisa mengganti
+          echo "DB_CONNECTION=mysql"       >> .env
+          echo "DB_HOST=127.0.0.1"         >> .env
+          echo "DB_PORT=3306"              >> .env
+          echo "DB_DATABASE=kampuslms_test" >> .env
+          echo "DB_USERNAME=root"          >> .env
+          echo "DB_PASSWORD=password"      >> .env
+
+      # ---------- migrate:fresh --seed ----------
+      - name: migrate:fresh --seed
+        working-directory: ./lms
+        run: php artisan migrate:fresh --seed --force
+
+      # ---------- migrate:refresh (buktikan reversible) ----------
+      - name: migrate:refresh (buktikan down() reversible)
+        working-directory: ./lms
+        run: php artisan migrate:refresh --force
+
+      # ---------- Jalankan test ----------
+      - name: Jalankan test
+        working-directory: ./lms
+        run: php artisan test
