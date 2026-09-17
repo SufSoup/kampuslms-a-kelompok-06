@@ -26,7 +26,7 @@
                     <td>{{ $user->nim_nip }}</td>
                     <td>
                         <a href="{{ route('users.edit', $user) }}">Edit</a>
-                        <form method="POST" action="{{ route('users.destroy', $user) }}" style="display: inline">
+                        <form method="POST" action="{{ route('users.destroy', $user) }}" style="display: inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data ini?');">
                             @csrf
                             @method('DELETE')
                             <button type="submit">Hapus</button>
