@@ -34,6 +34,11 @@ class Assignment extends Model
         return $this->belongsTo(Course::class);
     }
 
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
     public function submissions(): HasMany
     {
         return $this->hasMany(Submission::class);

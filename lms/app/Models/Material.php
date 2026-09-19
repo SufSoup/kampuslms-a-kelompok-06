@@ -28,4 +28,9 @@ class Material extends Model
     {
         return $this->belongsTo(Course::class);
     }
+
+    public function uploader(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'uploaded_by');
+    }
 }
