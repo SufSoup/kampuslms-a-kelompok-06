@@ -1,10 +1,4 @@
-@if ($errors->any())
-    <ul>
-        @foreach ($errors->all() as $error)
-            <li>{{ $error }}</li>
-        @endforeach
-    </ul>
-@endif
+
 
 <form method="POST" action="{{ $formAction }}">
     @csrf
@@ -14,15 +8,27 @@
 
     <label for="code">Kode</label>
     <input id="code" name="code" value="{{ old('code', $course->code ?? '') }}" required>
+    @error('code')
+        <p>{{ $message }}</p>
+    @enderror
 
     <label for="name">Nama</label>
     <input id="name" name="name" value="{{ old('name', $course->name ?? '') }}" required>
+    @error('name')
+        <p>{{ $message }}</p>
+    @enderror
 
     <label for="description">Deskripsi</label>
     <textarea id="description" name="description" required>{{ old('description', $course->description ?? '') }}</textarea>
+    @error('description')
+        <p>{{ $message }}</p>
+    @enderror
 
     <label for="sks">SKS</label>
     <input id="sks" name="sks" type="number" min="1" max="255" value="{{ old('sks', $course->sks ?? '') }}" required>
+    @error('sks')
+        <p>{{ $message }}</p>
+    @enderror
 
     <label for="lecturer_id">Dosen</label>
     <select id="lecturer_id" name="lecturer_id" required>
@@ -33,6 +39,9 @@
             </option>
         @endforeach
     </select>
+    @error('lecturer_id')
+        <p>{{ $message }}</p>
+    @enderror
 
     <label for="status">Status</label>
     <select id="status" name="status" required>
@@ -42,6 +51,9 @@
             </option>
         @endforeach
     </select>
+    @error('status')
+        <p>{{ $message }}</p>
+    @enderror
 
     <button type="submit">Simpan</button>
 </form>
