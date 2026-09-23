@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreCourseRequest;
+use App\Http\Requests\UpdateCourseRequest;
 use App\Models\Course;
 use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class CourseController extends Controller
 {
@@ -23,16 +23,9 @@ class CourseController extends Controller
         return view('courses.create', compact('lecturers'));
     }
 
-    public function store(Request $request)
+    public function store(StoreCourseRequest $request)
     {
-        $validated = $request->validate([
-            'code' => ['required', 'string', 'max:255', 'unique:courses,code'],
-            'name' => ['required', 'string', 'max:255'],
-            'description' => ['required', 'string'],
-            'sks' => ['required', 'integer', 'min:1', 'max:255'],
-            'lecturer_id' => ['required', 'exists:users,id'],
-            'status' => ['required', Rule::in(['draft', 'active', 'archived'])],
-        ]);
+        $validated = $request->validated();
 
         $lecturerId = $validated['lecturer_id'];
         unset($validated['lecturer_id']);
@@ -59,16 +52,9 @@ class CourseController extends Controller
         return view('courses.edit', compact('course', 'lecturers'));
     }
 
-    public function update(Request $request, Course $course)
+    public function update(UpdateCourseRequest $request, Course $course)
     {
-        $validated = $request->validate([
-            'code' => ['required', 'string', 'max:255', Rule::unique('courses', 'code')->ignore($course->id)],
-            'name' => ['required', 'string', 'max:255'],
-            'description' => ['required', 'string'],
-            'sks' => ['required', 'integer', 'min:1', 'max:255'],
-            'lecturer_id' => ['required', 'exists:users,id'],
-            'status' => ['required', Rule::in(['draft', 'active', 'archived'])],
-        ]);
+        $validated = $request->validated();
 
         $lecturerId = $validated['lecturer_id'];
         unset($validated['lecturer_id']);
