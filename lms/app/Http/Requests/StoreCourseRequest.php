@@ -19,7 +19,7 @@ class StoreCourseRequest extends FormRequest
             'code' => ['required', 'string', 'max:255', 'unique:courses,code'],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string'],
-            'sks' => ['required', 'integer', 'min:1', 'max:255'],
+            'sks' => ['required', 'integer', 'min:1', 'max:6'],
             'lecturer_id' => ['required', 'exists:users,id'],
             'status' => ['required', Rule::in(['draft', 'active', 'archived'])],
         ];
@@ -40,7 +40,7 @@ class StoreCourseRequest extends FormRequest
             'sks.required' => 'SKS wajib diisi.',
             'sks.integer' => 'SKS harus berupa angka bulat.',
             'sks.min' => 'SKS minimal 1.',
-            'sks.max' => 'SKS maksimal 255.',
+            'sks.max' => 'SKS maksimal 6.',
             'lecturer_id.required' => 'Dosen wajib dipilih.',
             'lecturer_id.exists' => 'Dosen yang dipilih tidak valid.',
             'status.required' => 'Status mata kuliah wajib dipilih.',
