@@ -295,3 +295,188 @@ main>a:last-child:hover {
     color: #1D1D1F;
     border-bottom-color: #1D1D1F;
 }
+
+/* --- Action Header & Filter Bar --------------------------- */
+.action-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.action-header > a {
+    margin-bottom: 0 !important;
+}
+
+form.filter-bar {
+    max-width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+form.filter-bar input[type="text"] {
+    width: 220px;
+    display: inline-block;
+    padding: 8px 14px;
+    font-size: 14px;
+    border-radius: 980px;
+}
+
+form.filter-bar select {
+    width: 150px;
+    display: inline-block;
+    padding: 8px 32px 8px 14px;
+    font-size: 14px;
+    border-radius: 980px;
+}
+
+form.filter-bar button[type="submit"] {
+    margin-top: 0;
+    padding: 8px 20px;
+    font-size: 14px;
+}
+
+.btn-reset {
+    font-size: 13px;
+    color: #8E8E93 !important;
+    border-bottom: 1px solid transparent !important;
+    padding: 6px 10px;
+    transition: color 0.2s;
+}
+
+.btn-reset:hover {
+    color: #FF3B30 !important;
+    border-bottom-color: #FF3B30 !important;
+}
+
+/* --- Badges ------------------------------------------------ */
+.badge {
+    display: inline-block;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 980px;
+    text-transform: capitalize;
+}
+
+.badge-active,
+.badge-admin {
+    background: #E8F5E9;
+    color: #2E7D32;
+}
+
+.badge-draft,
+.badge-dosen {
+    background: #E3F2FD;
+    color: #1565C0;
+}
+
+.badge-archived,
+.badge-mahasiswa {
+    background: #F5F5F7;
+    color: #6E6E73;
+}
+
+/* --- Alerts (Flash Messages) ------------------------------- */
+.alert {
+    padding: 14px 20px;
+    border-radius: 12px;
+    font-size: 14px;
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    line-height: 1.5;
+}
+
+.alert-success {
+    background: #E8F5E9;
+    color: #1B5E20;
+    border: 1px solid #C8E6C9;
+}
+
+.alert-danger {
+    background: #FFEBEE;
+    color: #B71C1C;
+    border: 1px solid #FFCDD2;
+}
+
+.alert-warning {
+    background: #FFF8E1;
+    color: #F57F17;
+    border: 1px solid #FFECB3;
+}
+
+/* --- Empty State ------------------------------------------- */
+.empty-state {
+    padding: 48px 24px;
+    text-align: center;
+    color: #6E6E73;
+    font-size: 15px;
+    background: #FAFAFA;
+    border-radius: 12px;
+    margin-top: 24px;
+    border: 1px dashed #E0E0E0;
+}
+
+/* --- Pagination -------------------------------------------- */
+.pagination-wrapper {
+    margin-top: 32px;
+    display: flex;
+    justify-content: center;
+}
+
+ul.pagination {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    border: none;
+}
+
+ul.pagination li {
+    margin: 0;
+    padding: 0;
+}
+
+ul.pagination li a,
+ul.pagination li span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 10px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 8px;
+    text-decoration: none;
+    border: 1px solid #E0E0E0;
+    color: #1D1D1F;
+    background: #FFFFFF;
+    transition: all 0.2s;
+}
+
+ul.pagination li a:hover {
+    background: #F5F5F7;
+    border-color: #BDBDBD;
+}
+
+ul.pagination li.active span {
+    background: #1D1D1F;
+    color: #FFFFFF;
+    border-color: #1D1D1F;
+}
+
+ul.pagination li.disabled span {
+    color: #BDBDBD;
+    border-color: #EEEEEE;
+    background: #FAFAFA;
+    cursor: not-allowed;
+}
