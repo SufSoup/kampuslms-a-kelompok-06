@@ -54,6 +54,22 @@ class CourseController extends Controller
 
     public function show(Course $course)
     {
+        $user = auth()->user();
+
+        // Dosen hanya boleh melihat MK yang ia ampu (tutup IDOR #1 dari READ)
+        // Catatan: akan dirapikan menjadi Policy di minggu 7
+        if ($user->role === 'dosen') {
+            abort_unless($course->lecturer_id === $user->id, 403);
+        }
+
+        // Mahasiswa hanya boleh melihat MK yang ia ikuti (tutup IDOR #2 dari READ)
+        if ($user->role === 'mahasiswa') {
+            abort_unless(
+                $course->students()->where('user_id', $user->id)->exists(),
+                403
+            );
+        }
+
         $course->load('lecturer');
 
         return view('courses.show', compact('course'));
