@@ -48,14 +48,14 @@ Total 21 route. Yang menerima parameter model ada **10 route** (ditandai `← pa
 
 | # | Route | Skenario serangan | Pelindung | Status |
 |---|-------|-------------------|-----------|--------|
-| 1 | `dosen/courses/{course}` | Dosen A buka `/dosen/courses/99` padahal MK 99 diampu dosen B | Hanya `role:dosen`, tidak cek `lecturer_id` | ⚠️ IDOR terbuka |
-| 2 | `mahasiswa/courses/{course}` | Mahasiswa A buka `/mahasiswa/courses/5` padahal tidak pernah mendaftar MK 5 | Hanya `role:mahasiswa`, tidak cek enrollment | ⚠️ IDOR terbuka |
+| 1 | `dosen/courses/{course}` | Dosen A buka `/dosen/courses/99` padahal MK 99 diampu dosen B | `role:dosen` + `abort_unless($course->lecturer_id === auth()->id(), 403)` di `show()` | ✅ Ditutup |
+| 2 | `mahasiswa/courses/{course}` | Mahasiswa A buka `/mahasiswa/courses/5` padahal tidak pernah mendaftar MK 5 | `role:mahasiswa` + `abort_unless($course->students()->where('user_id', $user->id)->exists(), 403)` di `show()` | ✅ Ditutup |
 | 3 | `admin/courses/{course}` (DELETE) | Dosen/mahasiswa akses langsung URL DELETE | Middleware `role:admin` blokir | ✅ Aman |
 | 4 | `admin/users/{user}` (PUT) | Mahasiswa coba edit data pengguna lain | Middleware `role:admin` blokir | ✅ Aman |
 | 5 | `dosen/courses/{course}/assignments/{assignment}` (belum ada) | Dosen A edit tugas milik dosen B | Belum ada route ini | 🔴 Belum dibuat |
 | 6 | Submission (belum ada) | Mahasiswa A buka submission milik mahasiswa B dengan ubah angka URL | Belum ada route ini | 🔴 Belum dibuat |
 
-Baris 1–2 adalah IDOR yang ada sekarang dan akan ditutup dengan `abort_unless` di controller. Baris 5–6 menunggu Syahid & Yusuf menambahkan controllernya.
+Baris 1–2 sudah ditutup dengan `abort_unless` di `CourseController::show()` (minggu ini). Akan dirapikan menjadi Policy di minggu 7. Baris 5–6 menunggu Syahid & Yusuf menambahkan controllernya.
 
 ---
 
