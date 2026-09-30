@@ -8,10 +8,20 @@
 </head>
 <body>
     <nav>
-        <a href="{{ url('/') }}">Dashboard</a>
-        <a href="{{ route('courses.index') }}">Mata Kuliah</a>
-        <a href="{{ route('users.index') }}">Pengguna</a>
+        <a href="{{ url('/') }}">Beranda</a>
         <a href="{{ route('tentang') }}">Tentang</a>
+
+        @auth
+            @if (auth()->user()->role === 'admin')
+                <a href="{{ route('admin.courses.index') }}">Mata Kuliah</a>
+                <a href="{{ route('admin.users.index') }}">Pengguna</a>
+            @elseif (auth()->user()->role === 'dosen')
+                <a href="{{ route('dosen.courses.index') }}">Mata Kuliah</a>
+            @elseif (auth()->user()->role === 'mahasiswa')
+                <a href="{{ route('mahasiswa.courses.index') }}">Mata Kuliah</a>
+            @endif
+            <a href="{{ route('dashboard') }}">Dashboard</a>
+        @endauth
     </nav>
 
     <main>
