@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CourseController;
+use App\Http\Controllers\MaterialController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\SubmissionController;
@@ -53,6 +54,11 @@ Route::middleware('auth')->group(function () {
 
             // Manajemen Mata Kuliah (hanya admin)
             Route::resource('courses', CourseController::class);
+
+            Route::scopeBindings()
+                ->resource('courses.materials', MaterialController::class)
+                ->only(['show'])
+                ->shallow();
         });
 
     /*
@@ -73,9 +79,7 @@ Route::middleware('auth')->group(function () {
             // scopeBindings() → pastikan {assignment}/{material} benar-benar milik {course}
             Route::scopeBindings()->group(function () {
                 Route::resource('courses.assignments', AssignmentController::class)->only(['show'])->shallow();
-                // AssignmentController & MaterialController akan ditambahkan Syahid & Yusuf
-                // Route::resource('courses.assignments', AssignmentController::class)->shallow();
-                // Route::resource('courses.materials',  MaterialController::class)->shallow();
+                Route::resource('courses.materials', MaterialController::class)->only(['show'])->shallow();
             });
         });
 
@@ -97,8 +101,7 @@ Route::middleware('auth')->group(function () {
             // scopeBindings() → pastikan {submission} benar-benar milik resource parent
             Route::scopeBindings()->group(function () {
                 Route::resource('courses.assignments.submissions', SubmissionController::class)->only(['show'])->shallow();
-                // SubmissionController akan ditambahkan Syahid
-                // Route::resource('courses.assignments.submissions', SubmissionController::class)->shallow();
+                Route::resource('courses.materials', MaterialController::class)->only(['show'])->shallow();
             });
         });
 
