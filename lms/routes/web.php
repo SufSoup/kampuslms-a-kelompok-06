@@ -18,6 +18,13 @@ Route::get('/tentang', function () {
     return view('tentang');
 })->name('tentang');
 
+// Placeholder login — sistem auth belum diimplementasi (minggu berikutnya)
+// Tanpa baris ini, middleware 'auth' akan crash dengan "Route [login] not defined"
+Route::get('/login', function () {
+    return view('welcome');
+})->name('login');
+
+
 /*
 |--------------------------------------------------------------------------
 | Route Terproteksi (wajib login)
