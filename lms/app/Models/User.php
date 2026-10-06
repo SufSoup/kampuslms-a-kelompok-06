@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, SoftDeletes;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     protected $fillable = [
         'name',
@@ -58,5 +59,12 @@ class User extends Authenticatable
     public function createdAssignments(): HasMany
     {
         return $this->hasMany(Assignment::class, 'created_by');
+    }
+
+    public function readResources(): BelongsToMany
+    {
+        return $this->belongsToMany(LearningResource::class, 'learning_resource_reads')
+            ->withPivot('read_at')
+            ->withTimestamps();
     }
 }
