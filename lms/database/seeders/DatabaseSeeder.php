@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Assignment;
 use App\Models\Course;
 use App\Models\Grade;
+use App\Models\LearningResource;
 use App\Models\Material;
 use App\Models\Submission;
 use App\Models\User;
@@ -248,11 +249,38 @@ class DatabaseSeeder extends Seeder
 
         /*
          * ============================================================
-         * 8. DEMO ACCOUNT
+         * 8. LEARNING RESOURCES (Fitur 17)
          * ============================================================
-         *
-         * Akun demo sudah dibuat di atas sebagai bagian dari
-         * user utama, sehingga tidak membuat user tambahan.
          */
+
+        foreach ($courses as $course) {
+            $resourceCount = fake()->numberBetween(2, 4);
+
+            $resources = LearningResource::factory()
+                ->count($resourceCount)
+                ->create([
+                    'course_id' => $course->id,
+                    'added_by' => $course->lecturer_id,
+                ]);
+
+            $enrolledStudents = $course->students()->get();
+
+            // Beberapa mahasiswa acak sudah membaca referensi
+            foreach ($resources as $resource) {
+                if ($enrolledStudents->isNotEmpty()) {
+                    $readerCount = min($enrolledStudents->count(), fake()->numberBetween(3, 8));
+                    $readers = $enrolledStudents->random($readerCount);
+
+                    foreach ($readers as $reader) {
+                        $now = now()->subDays(fake()->numberBetween(1, 10));
+                        $resource->readers()->attach($reader->id, [
+                            'read_at' => $now,
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ]);
+                    }
+                }
+            }
+        }
     }
 }
