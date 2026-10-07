@@ -1,8 +1,9 @@
 <?php
 
+use App\Http\Controllers\Api\AssignmentController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\LearningResourceController;
-use App\Http\Controllers\Api\AssignmentController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\SubmissionController;
 use Illuminate\Support\Facades\Route;
 
@@ -15,6 +16,8 @@ Route::prefix('auth')->group(function () {
 // Endpoint yang membutuhkan token Sanctum
 Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
     Route::get('/courses/{course}/assignments', [AssignmentController::class, 'index']);
     Route::post('/assignments', [AssignmentController::class, 'store']);
     Route::match(['put', 'patch'], '/assignments/{assignment}', [AssignmentController::class, 'update']);
