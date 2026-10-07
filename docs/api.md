@@ -43,6 +43,9 @@ Selain `401` jika tidak ada token dan `422` jika payload gagal validasi, aksi te
 | `POST` | `/auth/login` | Publik | `200` |
 | `POST` | `/auth/logout` | User login | `200` |
 | `GET` | `/me` | User login | `200` |
+| `GET` | `/courses` | Admin semua; dosen course yang diajar; mahasiswa course yang diikuti | `200` |
+| `GET` | `/courses/{course}` | Admin / dosen pengampu / mahasiswa terdaftar | `200` |
+| `GET` | `/courses/{course}/materials` | Admin / dosen pengampu / mahasiswa terdaftar | `200` |
 | `GET` | `/courses/{course}/resources` | Dosen pengampu / mahasiswa terdaftar | `200` |
 | `POST` | `/courses/{course}/resources` | Dosen pengampu / admin | `201` |
 | `GET` | `/resources/{resource}` | User berhak pada course | `200` |
@@ -132,7 +135,69 @@ Contoh response:
 
 ## Mata kuliah, materi, dan sumber belajar
 
-> **Catatan status:** pada versi kode yang didokumentasikan ini, endpoint API daftar/detail mata kuliah (`GET /courses`, `GET /courses/{course}`) dan materi (`GET /courses/{course}/materials`) belum terdaftar. Route web yang ada bukan endpoint API. Bagian ini mendokumentasikan endpoint sumber belajar Fitur 17 yang sudah tersedia.
+Endpoint mata kuliah membatasi data berdasarkan peran: admin dapat melihat semua mata kuliah, dosen hanya mata kuliah yang diajar, dan mahasiswa hanya mata kuliah yang diikuti. Endpoint detail dan materi mengembalikan `403` jika user tidak berhak mengakses mata kuliah tersebut. Koleksi dipaginasi 15 item per halaman; gunakan `?page=2` untuk halaman berikutnya.
+
+### `GET /api/v1/courses`
+
+Mengambil daftar mata kuliah yang boleh dilihat user. Response `200` berisi `data`, `links`, dan `meta`. Setiap mata kuliah mencakup data dosen pengampu serta jumlah materi dan tugas (`counts.materials`, `counts.assignments`).
+
+```bash
+curl "$BASE_URL/api/v1/courses?page=1" \
+  -H "Accept: application/json" \
+  -H "Authorization: ******"
+```
+
+Struktur setiap item pada `data`:
+
+```json
+{
+  "id": 1,
+  "code": "IF101",
+  "name": "Pemrograman Web",
+  "description": "Pengantar pengembangan aplikasi web.",
+  "sks": 3,
+  "status": "active",
+  "lecturer": {
+    "id": 2,
+    "name": "Dosen Demo",
+    "email": "dosen@kampuslms.test",
+    "role": "dosen",
+    "nim_nip": "19800101001",
+    "created_at": "2026-10-07T10:00:00+00:00"
+  },
+  "counts": {
+    "materials": 4,
+    "assignments": 2
+  },
+  "created_at": "2026-10-07T10:00:00+00:00"
+}
+```
+
+`meta` memuat `current_page`, `last_page`, dan `total`.
+
+### `GET /api/v1/courses/{course}`
+
+Mengambil detail satu mata kuliah yang dapat diakses user. Response `200` membungkus satu objek mata kuliah di dalam `data`, dengan dosen pengampu dan jumlah materi/tugas seperti pada daftar mata kuliah. ID mata kuliah yang tidak ada menghasilkan `404`; mata kuliah milik dosen lain atau yang tidak diikuti mahasiswa menghasilkan `403`.
+
+```bash
+curl "$BASE_URL/api/v1/courses/1" \
+  -H "Accept: application/json" \
+  -H "Authorization: ******"
+```
+
+### `GET /api/v1/courses/{course}/materials`
+
+Mengambil daftar materi dalam mata kuliah yang boleh diakses user. Response `200` berisi `data`, `links`, dan `meta`. Item materi hanya memuat `id`, `course_id`, `title`, `description`, `type`, `original_name`, `file_size`, `mime_type`, `external_url`, dan `created_at`; `file_path` tidak pernah disertakan.
+
+```bash
+curl "$BASE_URL/api/v1/courses/1/materials?page=1" \
+  -H "Accept: application/json" \
+  -H "Authorization: ******"
+```
+
+Mahasiswa yang tidak terdaftar dan dosen yang bukan pengampu menerima `403`.
+
+Sumber belajar Fitur 17 memiliki endpoint tersendiri:
 
 ### `GET /api/v1/courses/{course}/resources`
 
