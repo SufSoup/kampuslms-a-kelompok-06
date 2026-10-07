@@ -19,5 +19,27 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
-    })->create();
+        $exceptions->render(function (
+            \Symfony\Component\HttpKernel\Exception\HttpException $e,
+            $request
+        ) {
+            if ($request->is('api/*') && $e->getStatusCode() === 403) {
+                return response()->json([
+                    'message' => 'Anda tidak memiliki akses ke sumber daya ini.',
+                ], 403);
+            }
+        });
+
+        $exceptions->render(function (
+            \Illuminate\Validation\ValidationException $e,
+            $request
+        ) {
+            if ($request->is('api/*')) {
+                return response()->json([
+                    'message' => 'Data yang diberikan tidak valid.',
+                    'errors' => $e->errors(),
+                ], 422);
+            }
+        });
+    })
+    ->create();
