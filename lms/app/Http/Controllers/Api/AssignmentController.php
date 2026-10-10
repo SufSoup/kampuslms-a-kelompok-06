@@ -34,6 +34,9 @@ class AssignmentController extends Controller
             ->when($request->filled('status'), function ($query) use ($request) {
                 $query->where('status', $request->status);
             })
+            ->when($user->role === 'mahasiswa', function ($query) {
+                $query->where('status', 'published');
+            })
             ->latest()
             ->paginate(15)
             ->withQueryString();
@@ -75,7 +78,7 @@ class AssignmentController extends Controller
         Assignment $assignment
     ): JsonResponse {
         abort_unless(
-            $assignment->created_by === $request->user()->id,
+            (int) $assignment->course->lecturer_id === (int) $request->user()->id,
             403
         );
 
@@ -93,7 +96,7 @@ class AssignmentController extends Controller
         Assignment $assignment
     ): JsonResponse {
         abort_unless(
-            $assignment->created_by === $request->user()->id,
+            (int) $assignment->course->lecturer_id === (int) $request->user()->id,
             403
         );
 

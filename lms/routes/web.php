@@ -70,25 +70,37 @@ Route::middleware('auth')->group(function () {
         });
 
     /*
-    |----------------------------------------------------------------------
+    |--------------------------------------------------------------------------
     | Grup Dosen — prefix: /dosen, name prefix: dosen.
-    | Middleware: auth + role:dosen
-    |----------------------------------------------------------------------
+    |--------------------------------------------------------------------------
     */
     Route::middleware('role:dosen')
         ->prefix('dosen')
         ->name('dosen.')
         ->group(function () {
             // Dosen melihat mata kuliah yang ia ampu
-            Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
-            Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
+            Route::get('/courses', [CourseController::class, 'index'])
+                ->name('courses.index');
 
-            // Route bersarang: materi & tugas per mata kuliah
-            // scopeBindings() → pastikan {assignment}/{material} benar-benar milik {course}
+            Route::get('/courses/{course}', [CourseController::class, 'show'])
+                ->name('courses.show');
+
+            // CRUD assignment dan materi
             Route::scopeBindings()->group(function () {
-                Route::resource('courses.assignments', AssignmentController::class)->only(['show'])->shallow();
-                Route::resource('courses.materials', MaterialController::class)->shallow();
+                Route::resource('courses.assignments', AssignmentController::class)
+                    ->except(['index'])
+                    ->shallow();
+
+                Route::resource('courses.materials', MaterialController::class)
+                    ->shallow();
             });
+
+            // Daftar assignment dosen
+            Route::get('/assignments', [AssignmentController::class, 'index'])
+                ->name('assignments.index');
+
+            Route::get('/submissions/{submission}', [SubmissionController::class, 'show'])
+                ->name('submissions.show');
         });
 
     /*
@@ -111,6 +123,12 @@ Route::middleware('auth')->group(function () {
                 Route::resource('courses.assignments.submissions', SubmissionController::class)->only(['show'])->shallow();
                 Route::resource('courses.materials', MaterialController::class)->only(['show'])->shallow();
             });
+
+            Route::get('/assignments', [AssignmentController::class, 'index'])
+                ->name('assignments.index');
+
+            Route::get('/assignments/{assignment}', [AssignmentController::class, 'show'])
+                ->name('assignments.show');
         });
 
     /*

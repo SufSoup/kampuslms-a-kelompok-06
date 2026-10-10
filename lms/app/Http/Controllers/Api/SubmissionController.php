@@ -22,7 +22,7 @@ class SubmissionController extends Controller
         Assignment $assignment
     ): AnonymousResourceCollection {
         abort_unless(
-            $assignment->created_by === $request->user()->id,
+            (int) $assignment->course->lecturer_id === (int) $request->user()->id,
             403
         );
 
@@ -41,9 +41,10 @@ class SubmissionController extends Controller
         $user = $request->user();
 
         abort_unless(
-            $assignment->course->students()
-                ->where('users.id', $user->id)
-                ->exists(),
+            $assignment->status === 'published'
+                && $assignment->course->students()
+                    ->where('users.id', $user->id)
+                    ->exists(),
             403
         );
 
@@ -87,7 +88,7 @@ class SubmissionController extends Controller
         Submission $submission
     ): JsonResponse {
         abort_unless(
-            $submission->assignment->created_by === $request->user()->id,
+            (int) $submission->assignment->course->lecturer_id === (int) $request->user()->id,
             403
         );
 
