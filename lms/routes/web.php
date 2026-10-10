@@ -1,14 +1,17 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\MaterialController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\SubmissionController;
+use App\Http\Controllers\LearningResourceController;
+
 /*
 |--------------------------------------------------------------------------
-| Route Publik (tidak butuh login)
+| Route Publik & Otentikasi
 |--------------------------------------------------------------------------
 */
 
@@ -20,11 +23,12 @@ Route::get('/tentang', function () {
     return view('tentang');
 })->name('tentang');
 
-// Placeholder login — sistem auth belum diimplementasi (minggu berikutnya)
-// Tanpa baris ini, middleware 'auth' akan crash dengan "Route [login] not defined"
-Route::get('/login', function () {
-    return view('welcome');
-})->name('login');
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+});
+
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
 
 /*
@@ -104,6 +108,22 @@ Route::middleware('auth')->group(function () {
                 Route::resource('courses.materials', MaterialController::class)->only(['show'])->shallow();
             });
         });
+
+    /*
+    |----------------------------------------------------------------------
+    | Fitur 17: Kurasi Sumber Belajar Tambahan & Penanda Baca
+    |----------------------------------------------------------------------
+    */
+    Route::middleware('role:admin,dosen')->group(function () {
+        Route::get('/courses/{course}/resources/create', [LearningResourceController::class, 'create'])->name('learning-resources.create');
+        Route::post('/courses/{course}/resources', [LearningResourceController::class, 'store'])->name('learning-resources.store');
+        Route::get('/courses/{course}/resources/{resource}/edit', [LearningResourceController::class, 'edit'])->name('learning-resources.edit');
+        Route::put('/courses/{course}/resources/{resource}', [LearningResourceController::class, 'update'])->name('learning-resources.update');
+        Route::delete('/courses/{course}/resources/{resource}', [LearningResourceController::class, 'destroy'])->name('learning-resources.destroy');
+    });
+
+    // Toggle Penanda Baca (Mahasiswa) — Anti IDOR (mengikat ke auth()->id())
+    Route::post('/resources/{resource}/toggle-read', [LearningResourceController::class, 'toggleRead'])->name('learning-resources.toggle-read');
 
     /*
     |----------------------------------------------------------------------
