@@ -70,7 +70,7 @@ class CourseController extends Controller
             );
         }
 
-        $course->load('lecturer');
+        $course->load(['lecturer', 'learningResources.readers']);
 
         return view('courses.show', compact('course'));
     }
