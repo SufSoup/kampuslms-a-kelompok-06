@@ -66,7 +66,6 @@ Route::middleware('auth')->group(function () {
 
             Route::scopeBindings()
                 ->resource('courses.materials', MaterialController::class)
-                ->only(['show'])
                 ->shallow();
         });
 
@@ -88,7 +87,7 @@ Route::middleware('auth')->group(function () {
             // scopeBindings() → pastikan {assignment}/{material} benar-benar milik {course}
             Route::scopeBindings()->group(function () {
                 Route::resource('courses.assignments', AssignmentController::class)->only(['show'])->shallow();
-                Route::resource('courses.materials', MaterialController::class)->only(['show'])->shallow();
+                Route::resource('courses.materials', MaterialController::class)->shallow();
             });
         });
 
