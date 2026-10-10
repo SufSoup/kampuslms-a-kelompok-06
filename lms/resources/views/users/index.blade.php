@@ -2,9 +2,9 @@
     <h1>Daftar Pengguna</h1>
 
     <div class="action-header">
-        <a href="{{ route('users.create') }}">Tambah Pengguna</a>
+        <a href="{{ route('admin.users.create') }}">Tambah Pengguna</a>
 
-        <form method="GET" action="{{ route('users.index') }}" class="filter-bar">
+        <form method="GET" action="{{ route('admin.users.index') }}" class="filter-bar">
             <input
                 type="text"
                 name="q"
@@ -21,7 +21,7 @@
             </select>
             <button type="submit">Cari</button>
             @if (request()->hasAny(['q', 'role']))
-                <a href="{{ route('users.index') }}" class="btn-reset">Reset</a>
+                <a href="{{ route('admin.users.index') }}" class="btn-reset">Reset</a>
             @endif
         </form>
     </div>
@@ -42,7 +42,7 @@
             <tbody>
                 @foreach ($users as $user)
                     <tr>
-                        <td><a href="{{ route('users.show', $user) }}">{{ $user->name }}</a></td>
+                        <td><a href="{{ route('admin.users.show', $user) }}">{{ $user->name }}</a></td>
                         <td>{{ $user->email }}</td>
                         <td>
                             <span class="badge badge-{{ $user->role }}">
@@ -51,8 +51,8 @@
                         </td>
                         <td>{{ $user->nim_nip ?? '-' }}</td>
                         <td>
-                            <a href="{{ route('users.edit', $user) }}">Edit</a>
-                            <form method="POST" action="{{ route('users.destroy', $user) }}" style="display: inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data ini?');">
+                            <a href="{{ route('admin.users.edit', $user) }}">Edit</a>
+                            <form method="POST" action="{{ route('admin.users.destroy', $user) }}" style="display: inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data ini?');">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit">Hapus</button>
