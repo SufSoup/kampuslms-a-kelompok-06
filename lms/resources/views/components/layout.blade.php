@@ -18,8 +18,10 @@
                     <a href="{{ route('admin.users.index') }}">Pengguna</a>
                 @elseif (auth()->user()->role === 'dosen')
                     <a href="{{ route('dosen.courses.index') }}">Mata Kuliah</a>
+                    <a href="{{ route('dosen.assignments.index') }}">Tugas</a>
                 @elseif (auth()->user()->role === 'mahasiswa')
                     <a href="{{ route('mahasiswa.courses.index') }}">Mata Kuliah</a>
+                    <a href="{{ route('mahasiswa.assignments.index') }}">Tugas</a>
                 @endif
                 <a href="{{ route('dashboard') }}">Dashboard</a>
             @endauth
