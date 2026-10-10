@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CourseController;
+use App\Http\Controllers\CourseEnrollmentController;
 use App\Http\Controllers\MaterialController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AssignmentController;
@@ -58,6 +59,10 @@ Route::middleware('auth')->group(function () {
 
             // Manajemen Mata Kuliah (hanya admin)
             Route::resource('courses', CourseController::class);
+            Route::post('courses/{course}/enrollments', [CourseEnrollmentController::class, 'store'])
+                ->name('courses.enrollments.store');
+            Route::delete('courses/{course}/enrollments/{student}', [CourseEnrollmentController::class, 'destroy'])
+                ->name('courses.enrollments.destroy');
 
             Route::scopeBindings()
                 ->resource('courses.materials', MaterialController::class)

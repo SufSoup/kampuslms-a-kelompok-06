@@ -5,6 +5,6 @@
     <p>Role: {{ $user->role }}</p>
     <p>NIM/NIP: {{ $user->nim_nip }}</p>
 
-    <a href="{{ route('users.edit', $user) }}">Edit</a>
-    <a href="{{ route('users.index') }}">Kembali ke daftar</a>
+    <a href="{{ route('admin.users.edit', $user) }}">Edit</a>
+    <a href="{{ route('admin.users.index') }}">Kembali ke daftar</a>
 </x-layout>

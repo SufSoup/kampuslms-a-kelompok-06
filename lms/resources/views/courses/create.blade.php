@@ -2,9 +2,9 @@
     <h1>Tambah Mata Kuliah</h1>
 
     @include('courses._form', [
-        'formAction' => route('courses.store'),
+        'formAction' => route('admin.courses.store'),
         'method' => 'POST',
     ])
 
-    <a href="{{ route('courses.index') }}">Kembali</a>
+    <a href="{{ route('admin.courses.index') }}">Kembali</a>
 </x-layout>
