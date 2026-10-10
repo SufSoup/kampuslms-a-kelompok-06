@@ -8,6 +8,7 @@ use App\Models\Course;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class CourseController extends Controller
 {
@@ -45,6 +46,8 @@ class CourseController extends Controller
 
     public function create()
     {
+        Gate::authorize('create', Course::class);
+
         $lecturers = User::where('role', 'dosen')->orderBy('name')->get();
 
         return view('courses.create', compact('lecturers'));
@@ -52,6 +55,8 @@ class CourseController extends Controller
 
     public function store(StoreCourseRequest $request)
     {
+        Gate::authorize('create', Course::class);
+
         $validated = $request->validated();
 
         $lecturerId = $validated['lecturer_id'];
@@ -69,24 +74,12 @@ class CourseController extends Controller
     {
         $user = auth()->user();
 
-        // Dosen hanya boleh melihat MK yang ia ampu (tutup IDOR #1 dari READ)
-        // Catatan: akan dirapikan menjadi Policy di minggu 7
-        if ($user->role === 'dosen') {
-            abort_unless($course->lecturer_id === $user->id, 403);
-        }
-
-        // Mahasiswa hanya boleh melihat MK yang ia ikuti (tutup IDOR #2 dari READ)
-        if ($user->role === 'mahasiswa') {
-            abort_unless(
-                $course->students()->where('user_id', $user->id)->exists(),
-                403
-            );
-        }
+        Gate::authorize('view', $course);
 
         $course->load(['lecturer', 'learningResources.readers']);
         $availableStudents = collect();
 
-        if ($user->role === 'admin') {
+        if ($user && $user->role === 'admin') {
             $course->load([
                 'students' => fn ($query) => $query
                     ->where('role', 'mahasiswa')
@@ -105,6 +98,8 @@ class CourseController extends Controller
 
     public function edit(Course $course)
     {
+        Gate::authorize('update', $course);
+
         $lecturers = User::where('role', 'dosen')->orderBy('name')->get();
 
         return view('courses.edit', compact('course', 'lecturers'));
@@ -112,6 +107,8 @@ class CourseController extends Controller
 
     public function update(UpdateCourseRequest $request, Course $course)
     {
+        Gate::authorize('update', $course);
+
         $validated = $request->validated();
 
         $lecturerId = $validated['lecturer_id'];
@@ -126,6 +123,8 @@ class CourseController extends Controller
 
     public function destroy(Course $course)
     {
+        Gate::authorize('delete', $course);
+
         $course->delete();
 
         return redirect()->route('admin.courses.index')->with('success', 'Mata kuliah berhasil dihapus.');
