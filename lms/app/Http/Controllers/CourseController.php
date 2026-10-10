@@ -7,13 +7,25 @@ use App\Http\Requests\UpdateCourseRequest;
 use App\Models\Course;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class CourseController extends Controller
 {
     public function index(Request $request)
     {
-        $courses = Course::query()
-            ->with('lecturer')
+        $query = Course::query()->with('lecturer');
+
+        if (auth()->check() && auth()->user()->role === 'dosen') {
+            $query->where('lecturer_id', auth()->id());
+        }
+
+        if (auth()->check() && auth()->user()->role === 'mahasiswa') {
+            $query->whereHas('students', function ($studentQuery) {
+                $studentQuery->where('users.id', auth()->id());
+            });
+        }
+
+        $courses = $query
             ->when($request->filled('q'), function ($query) use ($request) {
                 $query->where(function ($q) use ($request) {
                     $q->where('name', 'like', '%' . $request->q . '%')
@@ -32,6 +44,8 @@ class CourseController extends Controller
 
     public function create()
     {
+        Gate::authorize('create', Course::class);
+
         $lecturers = User::where('role', 'dosen')->orderBy('name')->get();
 
         return view('courses.create', compact('lecturers'));
@@ -39,6 +53,8 @@ class CourseController extends Controller
 
     public function store(StoreCourseRequest $request)
     {
+        Gate::authorize('create', Course::class);
+
         $validated = $request->validated();
 
         $lecturerId = $validated['lecturer_id'];
@@ -49,26 +65,12 @@ class CourseController extends Controller
         $course->lecturer_id = $lecturerId;
         $course->save();
 
-        return redirect()->route('courses.index')->with('success', 'Mata kuliah berhasil dibuat.');
+        return redirect()->route('admin.courses.index')->with('success', 'Mata kuliah berhasil dibuat.');
     }
 
     public function show(Course $course)
     {
-        $user = auth()->user();
-
-        // Dosen hanya boleh melihat MK yang ia ampu (tutup IDOR #1 dari READ)
-        // Catatan: akan dirapikan menjadi Policy di minggu 7
-        if ($user->role === 'dosen') {
-            abort_unless($course->lecturer_id === $user->id, 403);
-        }
-
-        // Mahasiswa hanya boleh melihat MK yang ia ikuti (tutup IDOR #2 dari READ)
-        if ($user->role === 'mahasiswa') {
-            abort_unless(
-                $course->students()->where('user_id', $user->id)->exists(),
-                403
-            );
-        }
+        Gate::authorize('view', $course);
 
         $course->load(['lecturer', 'learningResources.readers']);
 
@@ -77,6 +79,8 @@ class CourseController extends Controller
 
     public function edit(Course $course)
     {
+        Gate::authorize('update', $course);
+
         $lecturers = User::where('role', 'dosen')->orderBy('name')->get();
 
         return view('courses.edit', compact('course', 'lecturers'));
@@ -84,6 +88,8 @@ class CourseController extends Controller
 
     public function update(UpdateCourseRequest $request, Course $course)
     {
+        Gate::authorize('update', $course);
+
         $validated = $request->validated();
 
         $lecturerId = $validated['lecturer_id'];
@@ -93,13 +99,15 @@ class CourseController extends Controller
         $course->lecturer_id = $lecturerId;
         $course->save();
 
-        return redirect()->route('courses.show', $course)->with('success', 'Mata kuliah berhasil diperbarui.');
+        return redirect()->route('admin.courses.show', $course)->with('success', 'Mata kuliah berhasil diperbarui.');
     }
 
     public function destroy(Course $course)
     {
+        Gate::authorize('delete', $course);
+
         $course->delete();
 
-        return redirect()->route('courses.index')->with('success', 'Mata kuliah berhasil dihapus.');
+        return redirect()->route('admin.courses.index')->with('success', 'Mata kuliah berhasil dihapus.');
     }
 }
