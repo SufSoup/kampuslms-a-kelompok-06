@@ -6,26 +6,13 @@ use App\Http\Requests\StoreCourseRequest;
 use App\Http\Requests\UpdateCourseRequest;
 use App\Models\Course;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
 class CourseController extends Controller
 {
     public function index(Request $request)
     {
-        $user = $request->user();
-
-        $query = match ($user->role) {
-            'admin' => Course::query(),
-            'dosen' => Course::query()->where('lecturer_id', $user->id),
-            'mahasiswa' => Course::query()->whereHas(
-                'students',
-                fn (Builder $query) => $query->whereKey($user->id)
-            ),
-            default => abort(403, 'Peran pengguna tidak memiliki akses ke daftar mata kuliah.'),
-        };
-
-        $courses = $query
+        $courses = Course::query()
             ->with('lecturer')
             ->when($request->filled('q'), function ($query) use ($request) {
                 $query->where(function ($q) use ($request) {
@@ -62,7 +49,7 @@ class CourseController extends Controller
         $course->lecturer_id = $lecturerId;
         $course->save();
 
-        return redirect()->route('admin.courses.index')->with('success', 'Mata kuliah berhasil dibuat.');
+        return redirect()->route('courses.index')->with('success', 'Mata kuliah berhasil dibuat.');
     }
 
     public function show(Course $course)
@@ -84,23 +71,8 @@ class CourseController extends Controller
         }
 
         $course->load(['lecturer', 'learningResources.readers']);
-        $availableStudents = collect();
 
-        if ($user->role === 'admin') {
-            $course->load([
-                'students' => fn ($query) => $query
-                    ->where('role', 'mahasiswa')
-                    ->orderBy('name'),
-            ]);
-
-            $availableStudents = User::query()
-                ->where('role', 'mahasiswa')
-                ->whereDoesntHave('courses', fn (Builder $query) => $query->whereKey($course->id))
-                ->orderBy('name')
-                ->get();
-        }
-
-        return view('courses.show', compact('course', 'availableStudents'));
+        return view('courses.show', compact('course'));
     }
 
     public function edit(Course $course)
@@ -121,13 +93,13 @@ class CourseController extends Controller
         $course->lecturer_id = $lecturerId;
         $course->save();
 
-        return redirect()->route('admin.courses.show', $course)->with('success', 'Mata kuliah berhasil diperbarui.');
+        return redirect()->route('courses.show', $course)->with('success', 'Mata kuliah berhasil diperbarui.');
     }
 
     public function destroy(Course $course)
     {
         $course->delete();
 
-        return redirect()->route('admin.courses.index')->with('success', 'Mata kuliah berhasil dihapus.');
+        return redirect()->route('courses.index')->with('success', 'Mata kuliah berhasil dihapus.');
     }
 }

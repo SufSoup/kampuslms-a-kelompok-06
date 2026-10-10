@@ -2,9 +2,9 @@
     <h1>Tambah Pengguna</h1>
 
     @include('users._form', [
-        'formAction' => route('admin.users.store'),
+        'formAction' => route('users.store'),
         'method' => 'POST',
     ])
 
-    <a href="{{ route('admin.users.index') }}">Kembali</a>
+    <a href="{{ route('users.index') }}">Kembali</a>
 </x-layout>

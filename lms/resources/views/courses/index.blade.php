@@ -1,20 +1,10 @@
 <x-layout title="Daftar Mata Kuliah">
-    @php
-        $courseRoutePrefix = match (auth()->user()->role) {
-            'admin' => 'admin.courses',
-            'dosen' => 'dosen.courses',
-            'mahasiswa' => 'mahasiswa.courses',
-        };
-    @endphp
-
     <h1>Daftar Mata Kuliah</h1>
 
     <div class="action-header">
-        @can('create', \App\Models\Course::class)
-            <a href="{{ route('admin.courses.create') }}">Tambah Mata Kuliah</a>
-        @endcan
+        <a href="{{ route('courses.create') }}">Tambah Mata Kuliah</a>
 
-        <form method="GET" action="{{ route($courseRoutePrefix . '.index') }}" class="filter-bar">
+        <form method="GET" action="{{ route('courses.index') }}" class="filter-bar">
             <input
                 type="text"
                 name="q"
@@ -31,7 +21,7 @@
             </select>
             <button type="submit">Cari</button>
             @if (request()->hasAny(['q', 'status']))
-                <a href="{{ route($courseRoutePrefix . '.index') }}" class="btn-reset">Reset</a>
+                <a href="{{ route('courses.index') }}" class="btn-reset">Reset</a>
             @endif
         </form>
     </div>
@@ -55,7 +45,7 @@
                     <tr>
                         <td>{{ $course->code }}</td>
                         <td>
-                            <a href="{{ route($courseRoutePrefix . '.show', $course) }}">{{ $course->name }}</a>
+                            <a href="{{ route('courses.show', $course) }}">{{ $course->name }}</a>
                         </td>
                         <td>{{ $course->sks }}</td>
                         <td>
@@ -65,16 +55,12 @@
                         </td>
                         <td>{{ $course->lecturer?->name ?? 'Dosen tidak tersedia' }}</td>
                         <td>
-                            @can('update', $course)
-                                <a href="{{ route('admin.courses.edit', $course) }}">Edit</a>
-                            @endcan
-                            @can('delete', $course)
-                                <form method="POST" action="{{ route('admin.courses.destroy', $course) }}" style="display: inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data ini?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit">Hapus</button>
-                                </form>
-                            @endcan
+                            <a href="{{ route('courses.edit', $course) }}">Edit</a>
+                            <form method="POST" action="{{ route('courses.destroy', $course) }}" style="display: inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data ini?');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit">Hapus</button>
+                            </form>
                         </td>
                     </tr>
                 @endforeach
