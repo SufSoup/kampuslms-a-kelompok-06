@@ -6,6 +6,7 @@ use App\Http\Requests\StoreCourseRequest;
 use App\Http\Requests\UpdateCourseRequest;
 use App\Models\Course;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
@@ -13,19 +14,20 @@ class CourseController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Course::query()->with('lecturer');
+        $user = $request->user();
 
-        if (auth()->check() && auth()->user()->role === 'dosen') {
-            $query->where('lecturer_id', auth()->id());
-        }
-
-        if (auth()->check() && auth()->user()->role === 'mahasiswa') {
-            $query->whereHas('students', function ($studentQuery) {
-                $studentQuery->where('users.id', auth()->id());
-            });
-        }
+        $query = match ($user->role) {
+            'admin' => Course::query(),
+            'dosen' => Course::query()->where('lecturer_id', $user->id),
+            'mahasiswa' => Course::query()->whereHas(
+                'students',
+                fn (Builder $query) => $query->whereKey($user->id)
+            ),
+            default => abort(403, 'Peran pengguna tidak memiliki akses ke daftar mata kuliah.'),
+        };
 
         $courses = $query
+            ->with('lecturer')
             ->when($request->filled('q'), function ($query) use ($request) {
                 $query->where(function ($q) use ($request) {
                     $q->where('name', 'like', '%' . $request->q . '%')
@@ -70,11 +72,28 @@ class CourseController extends Controller
 
     public function show(Course $course)
     {
+        $user = auth()->user();
+
         Gate::authorize('view', $course);
 
         $course->load(['lecturer', 'learningResources.readers']);
+        $availableStudents = collect();
 
-        return view('courses.show', compact('course'));
+        if ($user && $user->role === 'admin') {
+            $course->load([
+                'students' => fn ($query) => $query
+                    ->where('role', 'mahasiswa')
+                    ->orderBy('name'),
+            ]);
+
+            $availableStudents = User::query()
+                ->where('role', 'mahasiswa')
+                ->whereDoesntHave('courses', fn (Builder $query) => $query->whereKey($course->id))
+                ->orderBy('name')
+                ->get();
+        }
+
+        return view('courses.show', compact('course', 'availableStudents'));
     }
 
     public function edit(Course $course)
