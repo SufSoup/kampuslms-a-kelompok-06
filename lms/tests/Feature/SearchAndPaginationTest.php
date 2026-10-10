@@ -11,6 +11,13 @@ class SearchAndPaginationTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->actingAs(User::factory()->admin()->create());
+    }
+
     public function test_can_search_course_by_name_or_code(): void
     {
         $dosen = User::factory()->dosen()->create();
@@ -30,13 +37,13 @@ class SearchAndPaginationTest extends TestCase
         ]);
 
         // Search by name
-        $response = $this->get(route('courses.index', ['q' => 'Web']));
+        $response = $this->get(route('admin.courses.index', ['q' => 'Web']));
         $response->assertOk();
         $response->assertSee('Pemrograman Web Lanjut');
         $response->assertDontSee('Basis Data Relasional');
 
         // Search by code
-        $responseCode = $this->get(route('courses.index', ['q' => 'SI202']));
+        $responseCode = $this->get(route('admin.courses.index', ['q' => 'SI202']));
         $responseCode->assertOk();
         $responseCode->assertSee('Basis Data Relasional');
         $responseCode->assertDontSee('Pemrograman Web Lanjut');
@@ -58,7 +65,7 @@ class SearchAndPaginationTest extends TestCase
             'status' => 'draft',
         ]);
 
-        $response = $this->get(route('courses.index', ['status' => 'draft']));
+        $response = $this->get(route('admin.courses.index', ['status' => 'draft']));
         $response->assertOk();
         $response->assertSee('Aljabar Linear');
         $response->assertDontSee('Kalkulus 1');
@@ -75,12 +82,54 @@ class SearchAndPaginationTest extends TestCase
             'status' => 'active',
         ]);
 
-        $response = $this->get(route('courses.index', ['q' => 'Laravel', 'status' => 'active']));
+        $response = $this->get(route('admin.courses.index', ['q' => 'Laravel', 'status' => 'active']));
         $response->assertOk();
         // Check that page 2 link contains query params
         $response->assertSee('q=Laravel');
         $response->assertSee('status=active');
         $response->assertSee('page=2');
+    }
+
+    public function test_lecturer_only_sees_courses_they_teach(): void
+    {
+        $lecturer = User::factory()->dosen()->create();
+        $otherLecturer = User::factory()->dosen()->create();
+
+        Course::factory()->create([
+            'name' => 'Mata Kuliah Dosen Ini',
+            'lecturer_id' => $lecturer->id,
+        ]);
+        Course::factory()->create([
+            'name' => 'Mata Kuliah Dosen Lain',
+            'lecturer_id' => $otherLecturer->id,
+        ]);
+
+        $response = $this->actingAs($lecturer)->get(route('dosen.courses.index'));
+
+        $response->assertOk();
+        $response->assertSee('Mata Kuliah Dosen Ini');
+        $response->assertDontSee('Mata Kuliah Dosen Lain');
+    }
+
+    public function test_student_only_sees_enrolled_courses(): void
+    {
+        $student = User::factory()->mahasiswa()->create();
+        $lecturer = User::factory()->dosen()->create();
+        $enrolledCourse = Course::factory()->create([
+            'name' => 'Mata Kuliah Diikuti',
+            'lecturer_id' => $lecturer->id,
+        ]);
+        Course::factory()->create([
+            'name' => 'Mata Kuliah Tidak Diikuti',
+            'lecturer_id' => $lecturer->id,
+        ]);
+        $enrolledCourse->students()->attach($student->id, ['enrolled_at' => now()]);
+
+        $response = $this->actingAs($student)->get(route('mahasiswa.courses.index'));
+
+        $response->assertOk();
+        $response->assertSee('Mata Kuliah Diikuti');
+        $response->assertDontSee('Mata Kuliah Tidak Diikuti');
     }
 
     public function test_can_search_user_by_name_or_email(): void
@@ -98,13 +147,13 @@ class SearchAndPaginationTest extends TestCase
         ]);
 
         // Search by name
-        $response = $this->get(route('users.index', ['q' => 'Budi']));
+        $response = $this->get(route('admin.users.index', ['q' => 'Budi']));
         $response->assertOk();
         $response->assertSee('Budi Santoso');
         $response->assertDontSee('Siti Rahma');
 
         // Search by email
-        $responseEmail = $this->get(route('users.index', ['q' => 'siti@']));
+        $responseEmail = $this->get(route('admin.users.index', ['q' => 'siti@']));
         $responseEmail->assertOk();
         $responseEmail->assertSee('Siti Rahma');
         $responseEmail->assertDontSee('Budi Santoso');
@@ -122,7 +171,7 @@ class SearchAndPaginationTest extends TestCase
             'role' => 'mahasiswa',
         ]);
 
-        $response = $this->get(route('users.index', ['role' => 'dosen']));
+        $response = $this->get(route('admin.users.index', ['role' => 'dosen']));
         $response->assertOk();
         $response->assertSee('Agus Dosen');
         $response->assertDontSee('Rini Mahasiswa');
@@ -135,7 +184,7 @@ class SearchAndPaginationTest extends TestCase
             'role' => 'mahasiswa',
         ]);
 
-        $response = $this->get(route('users.index', ['q' => 'Camp', 'role' => 'mahasiswa']));
+        $response = $this->get(route('admin.users.index', ['q' => 'Camp', 'role' => 'mahasiswa']));
         $response->assertOk();
         $response->assertSee('q=Camp');
         $response->assertSee('role=mahasiswa');
@@ -145,7 +194,7 @@ class SearchAndPaginationTest extends TestCase
     public function test_flash_message_displays_in_layout(): void
     {
         $response = $this->withSession(['success' => 'Operasi berhasil dilakukan!'])
-            ->get(route('courses.index'));
+            ->get(route('admin.courses.index'));
 
         $response->assertOk();
         $response->assertSee('Operasi berhasil dilakukan!');
