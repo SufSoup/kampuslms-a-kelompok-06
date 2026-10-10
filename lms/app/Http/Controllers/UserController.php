@@ -45,7 +45,7 @@ class UserController extends Controller
         $user->role = $role;
         $user->save();
 
-        return redirect()->route('admin.users.index')->with('success', 'Pengguna berhasil dibuat.');
+        return redirect()->route('users.index')->with('success', 'Pengguna berhasil dibuat.');
     }
 
     public function show(User $user)
@@ -73,13 +73,13 @@ class UserController extends Controller
         $user->role = $role;
         $user->save();
 
-        return redirect()->route('admin.users.show', $user)->with('success', 'Pengguna berhasil diperbarui.');
+        return redirect()->route('users.show', $user)->with('success', 'Pengguna berhasil diperbarui.');
     }
 
     public function destroy(User $user)
     {
         $user->delete();
 
-        return redirect()->route('admin.users.index')->with('success', 'Pengguna berhasil dihapus.');
+        return redirect()->route('users.index')->with('success', 'Pengguna berhasil dihapus.');
     }
 }
