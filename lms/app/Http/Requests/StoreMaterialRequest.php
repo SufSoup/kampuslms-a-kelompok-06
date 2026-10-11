@@ -18,11 +18,8 @@ class StoreMaterialRequest extends FormRequest
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'type' => ['required', Rule::in(['file', 'link'])],
-            'external_url' => ['nullable', 'url', 'max:500', Rule::requiredIf($this->input('type') === 'link')],
-            'file_path' => ['nullable', 'string', 'max:500'],
-            'original_name' => ['nullable', 'string', 'max:255'],
-            'file_size' => ['nullable', 'integer', 'min:0'],
-            'mime_type' => ['nullable', 'string', 'max:255'],
+            'external_url' => ['nullable', 'url', 'max:255', Rule::requiredIf($this->input('type') === 'link')],
+            'file' => ['nullable', 'file', 'mimes:pdf,doc,docx,ppt,pptx,xls,xlsx,txt,zip', 'max:20480', Rule::requiredIf($this->input('type') === 'file')],
         ];
     }
 
@@ -35,7 +32,11 @@ class StoreMaterialRequest extends FormRequest
             'type.in' => 'Tipe materi harus berupa file atau tautan.',
             'external_url.required' => 'URL materi wajib diisi ketika tipe materi adalah tautan.',
             'external_url.url' => 'Format URL tidak valid.',
-            'file_path.max' => 'Lokasi berkas maksimal 500 karakter.',
+            'external_url.max' => 'URL materi maksimal 255 karakter.',
+            'file.required' => 'Berkas materi wajib diunggah.',
+            'file.file' => 'Berkas materi tidak valid.',
+            'file.mimes' => 'Format berkas harus PDF, Word, PowerPoint, Excel, TXT, atau ZIP.',
+            'file.max' => 'Ukuran berkas maksimal 20 MB.',
         ];
     }
 }
