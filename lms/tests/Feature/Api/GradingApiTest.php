@@ -325,4 +325,72 @@ class GradingApiTest extends TestCase
             ])
             ->assertJsonValidationErrors(['score']);
     }
+
+    public function test_course_lecturer_can_grade_submission_created_by_previous_lecturer(): void
+    {
+        $previousLecturer = User::factory()->dosen()->create();
+        $currentLecturer = User::factory()->dosen()->create();
+        $student = User::factory()->mahasiswa()->create();
+        $course = Course::factory()->create([
+            'lecturer_id' => $currentLecturer->id,
+        ]);
+        $assignment = Assignment::factory()->create([
+            'course_id' => $course->id,
+            'created_by' => $previousLecturer->id,
+        ]);
+        $submission = Submission::factory()->create([
+            'assignment_id' => $assignment->id,
+            'user_id' => $student->id,
+        ]);
+
+        $this->actingAs($currentLecturer, 'sanctum')
+            ->putJson("/api/v1/submissions/{$submission->id}/grade", [
+                'score' => 88,
+                'feedback' => 'Dinilai pengampu saat ini.',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.graded_by', $currentLecturer->id);
+    }
+
+    public function test_previous_course_lecturer_cannot_list_or_grade_after_reassignment(): void
+    {
+        $previousLecturer = User::factory()->dosen()->create();
+        $currentLecturer = User::factory()->dosen()->create();
+        $student = User::factory()->mahasiswa()->create();
+        $course = Course::factory()->create([
+            'lecturer_id' => $currentLecturer->id,
+        ]);
+        $assignment = Assignment::factory()->create([
+            'course_id' => $course->id,
+            'created_by' => $previousLecturer->id,
+        ]);
+        $submission = Submission::factory()->create([
+            'assignment_id' => $assignment->id,
+            'user_id' => $student->id,
+        ]);
+
+        $this->actingAs($previousLecturer, 'sanctum')
+            ->getJson("/api/v1/assignments/{$assignment->id}/submissions")
+            ->assertForbidden();
+        $this->putJson("/api/v1/submissions/{$submission->id}/grade", [
+            'score' => 88,
+        ])->assertForbidden();
+    }
+
+    public function test_student_cannot_submit_an_assignment_that_is_still_draft(): void
+    {
+        Storage::fake();
+        $student = User::factory()->mahasiswa()->create();
+        $course = Course::factory()->create();
+        $course->students()->attach($student->id, ['enrolled_at' => now()]);
+        $assignment = Assignment::factory()->draft()->create([
+            'course_id' => $course->id,
+        ]);
+
+        $this->actingAs($student, 'sanctum')
+            ->post("/api/v1/assignments/{$assignment->id}/submissions", [
+                'file' => UploadedFile::fake()->create('tugas.pdf', 100, 'application/pdf'),
+            ], ['Accept' => 'application/json'])
+            ->assertForbidden();
+    }
 }

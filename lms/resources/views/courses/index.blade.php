@@ -1,9 +1,15 @@
 <x-layout title="Daftar Mata Kuliah">
     @php
-        $courseRoutePrefix = match (auth()->user()->role) {
-            'admin' => 'admin.courses',
-            'dosen' => 'dosen.courses',
-            'mahasiswa' => 'mahasiswa.courses',
+        $courseIndexRoute = match (auth()->user()->role) {
+            'admin' => 'admin.courses.index',
+            'dosen' => 'dosen.courses.index',
+            'mahasiswa' => 'mahasiswa.courses.index',
+        };
+
+        $courseShowRoute = match (auth()->user()->role) {
+            'admin' => 'admin.courses.show',
+            'dosen' => 'dosen.courses.show',
+            'mahasiswa' => 'mahasiswa.courses.show',
         };
     @endphp
 
@@ -14,13 +20,14 @@
             <a href="{{ route('admin.courses.create') }}">Tambah Mata Kuliah</a>
         @endcan
 
-        <form method="GET" action="{{ route($courseRoutePrefix . '.index') }}" class="filter-bar">
+        <form method="GET" action="{{ route($courseIndexRoute) }}" class="filter-bar">
             <input
                 type="text"
                 name="q"
-                placeholder="Cari kode atau nama..."
                 value="{{ request('q') }}"
+                placeholder="Cari mata kuliah..."
             >
+
             <select name="status">
                 <option value="">Semua Status</option>
                 @foreach (['draft', 'active', 'archived'] as $status)
@@ -29,21 +36,23 @@
                     </option>
                 @endforeach
             </select>
+
             <button type="submit">Cari</button>
+
             @if (request()->hasAny(['q', 'status']))
-                <a href="{{ route($courseRoutePrefix . '.index') }}" class="btn-reset">Reset</a>
+                <a href="{{ route($courseIndexRoute) }}" class="btn-reset">Reset</a>
             @endif
         </form>
     </div>
 
     @if ($courses->isEmpty())
-        <p class="empty-state">Tidak ada mata kuliah yang ditemukan.</p>
+        <p>Belum ada mata kuliah yang tersedia.</p>
     @else
         <table>
             <thead>
                 <tr>
                     <th>Kode</th>
-                    <th>Nama</th>
+                    <th>Nama Mata Kuliah</th>
                     <th>SKS</th>
                     <th>Status</th>
                     <th>Dosen</th>
@@ -55,7 +64,7 @@
                     <tr>
                         <td>{{ $course->code }}</td>
                         <td>
-                            <a href="{{ route($courseRoutePrefix . '.show', $course) }}">{{ $course->name }}</a>
+                            <a href="{{ route($courseShowRoute, $course) }}">{{ $course->name }}</a>
                         </td>
                         <td>{{ $course->sks }}</td>
                         <td>
@@ -68,6 +77,7 @@
                             @can('update', $course)
                                 <a href="{{ route('admin.courses.edit', $course) }}">Edit</a>
                             @endcan
+
                             @can('delete', $course)
                                 <form method="POST" action="{{ route('admin.courses.destroy', $course) }}" style="display: inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data ini?');">
                                     @csrf
@@ -81,8 +91,6 @@
             </tbody>
         </table>
 
-        <div class="pagination-wrapper">
-            {{ $courses->links() }}
-        </div>
+        {{ $courses->links() }}
     @endif
 </x-layout>
