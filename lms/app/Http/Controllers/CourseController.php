@@ -76,7 +76,7 @@ class CourseController extends Controller
 
         Gate::authorize('view', $course);
 
-        $course->load(['lecturer', 'learningResources.readers']);
+        $course->load(['lecturer', 'learningResources.readers', 'materials']);
         $availableStudents = collect();
 
         if ($user && $user->role === 'admin') {

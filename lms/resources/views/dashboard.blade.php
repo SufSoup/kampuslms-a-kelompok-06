@@ -8,18 +8,25 @@
 
     @if (auth()->user()->role === 'admin')
         <!-- Dashboard Admin -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 40px;">
-            <div style="background: #F5F5F7; padding: 24px; border-radius: 16px; border: 1px solid #E5E5EA;">
-                <p style="font-size: 13px; font-weight: 600; text-transform: uppercase; color: #6E6E73; margin-bottom: 8px;">Peran</p>
-                <h2 style="font-size: 28px; font-weight: 700; margin: 0; color: #0071E3;">Administrator</h2>
-                <small style="color: #8E8E93;">Hak akses penuh ke seluruh modul sistem</small>
-            </div>
-            <div style="background: #F5F5F7; padding: 24px; border-radius: 16px; border: 1px solid #E5E5EA;">
-                <p style="font-size: 13px; font-weight: 600; text-transform: uppercase; color: #6E6E73; margin-bottom: 8px;">Aksi Cepat</p>
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <a href="{{ route('admin.courses.index') }}" style="border-bottom: none; color: #0071E3; font-weight: 500;">→ Kelola Mata Kuliah</a>
-                    <a href="{{ route('admin.users.index') }}" style="border-bottom: none; color: #0071E3; font-weight: 500;">→ Kelola Pengguna</a>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 32px;">
+            @foreach ([
+                'Pengguna' => $stats['users'],
+                'Mata Kuliah' => $stats['courses'],
+                'Materi' => $stats['materials'],
+                'Tugas' => $stats['assignments'],
+            ] as $label => $count)
+                <div style="background: #F5F5F7; padding: 20px; border-radius: 16px; border: 1px solid #E5E5EA;">
+                    <p style="font-size: 13px; font-weight: 600; text-transform: uppercase; color: #6E6E73; margin-bottom: 8px;">{{ $label }}</p>
+                    <h2 style="font-size: 28px; font-weight: 700; margin: 0; color: #0071E3;">{{ $count }}</h2>
                 </div>
+            @endforeach
+        </div>
+
+        <div style="background: #F5F5F7; padding: 24px; border-radius: 16px; border: 1px solid #E5E5EA; margin-bottom: 40px;">
+            <h2 style="font-size: 20px; margin: 0 0 12px;">Aksi Cepat</h2>
+            <div style="display: flex; flex-wrap: wrap; gap: 16px;">
+                <a href="{{ route('admin.courses.index') }}" style="color: #0071E3; font-weight: 500;">→ Kelola Mata Kuliah</a>
+                <a href="{{ route('admin.users.index') }}" style="color: #0071E3; font-weight: 500;">→ Kelola Pengguna</a>
             </div>
         </div>
 
@@ -37,10 +44,6 @@
 
     @elseif (auth()->user()->role === 'dosen')
         <!-- Dashboard Dosen -->
-        @php
-            $taughtCourses = auth()->user()->taughtCourses()->withCount(['students', 'materials', 'assignments'])->get();
-        @endphp
-
         <div style="margin-bottom: 32px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                 <h3 style="font-size: 22px; font-weight: 600; margin: 0;">Mata Kuliah yang Anda Ampu</h3>
@@ -77,10 +80,6 @@
 
     @elseif (auth()->user()->role === 'mahasiswa')
         <!-- Dashboard Mahasiswa -->
-        @php
-            $enrolledCourses = auth()->user()->courses()->with('lecturer')->withCount(['materials', 'assignments'])->get();
-        @endphp
-
         <div style="margin-bottom: 32px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                 <h3 style="font-size: 22px; font-weight: 600; margin: 0;">Mata Kuliah yang Anda Ikuti</h3>
@@ -114,5 +113,29 @@
                 </div>
             @endif
         </div>
+
+        <section style="margin-bottom: 32px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h3 style="font-size: 22px; font-weight: 600; margin: 0;">Tugas Aktif</h3>
+                <span style="font-size: 14px; color: #6E6E73;">Total: {{ $activeAssignmentsCount }}</span>
+            </div>
+            @if ($activeAssignments->isEmpty())
+                <div style="padding: 24px; background: #F5F5F7; border-radius: 16px; text-align: center;">
+                    <p style="color: #6E6E73; margin: 0;">Tidak ada tugas aktif dengan tenggat yang akan datang.</p>
+                </div>
+            @else
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    @foreach ($activeAssignments as $assignment)
+                        <div style="background: #FFFFFF; border: 1px solid #E5E5EA; border-radius: 12px; padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; gap: 16px;">
+                            <div>
+                                <h4 style="font-size: 16px; margin: 0 0 4px;">{{ $assignment->title }}</h4>
+                                <p style="font-size: 13px; color: #6E6E73; margin: 0;">{{ $assignment->course->name }} · Tenggat {{ $assignment->due_at->format('d M Y, H:i') }}</p>
+                            </div>
+                            <a href="{{ route('mahasiswa.assignments.show', $assignment) }}" style="color: #0071E3; text-decoration: none; white-space: nowrap;">Lihat tugas →</a>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+        </section>
     @endif
 </x-layout>
