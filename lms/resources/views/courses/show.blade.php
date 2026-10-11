@@ -37,6 +37,34 @@
         </div>
     </div>
 
+    @can('viewAny', [\App\Models\Material::class, $course])
+        @php
+            $courseRoutePrefix = match (auth()->user()->role) {
+                'admin' => 'admin',
+                'dosen' => 'dosen',
+                'mahasiswa' => 'mahasiswa',
+            };
+        @endphp
+        <section style="margin-bottom: 36px; padding: 24px; border: 1px solid #E5E5EA; border-radius: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px;">
+                <div>
+                    <h2 style="font-size: 22px; margin: 0 0 6px;">Materi Perkuliahan</h2>
+                    <p style="color: #6E6E73; margin: 0;">{{ $course->materials->count() }} materi tersedia untuk mata kuliah ini.</p>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <a href="{{ route($courseRoutePrefix . '.courses.materials.index', $course) }}" style="color: #0071E3; text-decoration: none;">
+                        Lihat Materi
+                    </a>
+                    @can('create', [\App\Models\Material::class, $course])
+                        <a href="{{ route($courseRoutePrefix . '.courses.materials.create', $course) }}" style="background: #000; color: #fff; padding: 9px 16px; border-radius: 999px; text-decoration: none;">
+                            + Tambah Materi
+                        </a>
+                    @endcan
+                </div>
+            </div>
+        </section>
+    @endcan
+
     <!-- ================================================================= -->
     <!-- FITUR 17: KURASI SUMBER BELAJAR TAMBAHAN & PENANDA BACA          -->
     <!-- ================================================================= -->

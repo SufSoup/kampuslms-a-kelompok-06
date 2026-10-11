@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseEnrollmentController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MaterialController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AssignmentController;
@@ -40,9 +41,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 
 Route::middleware('auth')->group(function () {
 
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', DashboardController::class)->name('dashboard');
 
     /*
     |----------------------------------------------------------------------
@@ -67,6 +66,8 @@ Route::middleware('auth')->group(function () {
             Route::scopeBindings()
                 ->resource('courses.materials', MaterialController::class)
                 ->shallow();
+            Route::get('materials/{material}/download', [MaterialController::class, 'download'])
+                ->name('materials.download');
         });
 
     /*
@@ -93,6 +94,8 @@ Route::middleware('auth')->group(function () {
 
                 Route::resource('courses.materials', MaterialController::class)
                     ->shallow();
+                Route::get('materials/{material}/download', [MaterialController::class, 'download'])
+                    ->name('materials.download');
             });
 
             // Daftar assignment dosen
@@ -121,7 +124,9 @@ Route::middleware('auth')->group(function () {
             // scopeBindings() → pastikan {submission} benar-benar milik resource parent
             Route::scopeBindings()->group(function () {
                 Route::resource('courses.assignments.submissions', SubmissionController::class)->only(['show'])->shallow();
-                Route::resource('courses.materials', MaterialController::class)->only(['show'])->shallow();
+                Route::resource('courses.materials', MaterialController::class)->only(['index', 'show'])->shallow();
+                Route::get('materials/{material}/download', [MaterialController::class, 'download'])
+                    ->name('materials.download');
             });
 
             Route::get('/assignments', [AssignmentController::class, 'index'])
