@@ -154,4 +154,56 @@ class AssignmentApiTest extends TestCase
             'id' => $assignment->id,
         ]);
     }
+
+    public function test_current_course_lecturer_can_manage_assignment_created_by_previous_lecturer(): void
+    {
+        $previousLecturer = User::factory()->dosen()->create();
+        $currentLecturer = User::factory()->dosen()->create();
+        $course = Course::factory()->create([
+            'lecturer_id' => $currentLecturer->id,
+        ]);
+        $assignment = Assignment::factory()->create([
+            'course_id' => $course->id,
+            'created_by' => $previousLecturer->id,
+        ]);
+
+        $this->actingAs($currentLecturer, 'sanctum')
+            ->patchJson("/api/v1/assignments/{$assignment->id}", [
+                'title' => 'Diperbarui pengampu baru',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.title', 'Diperbarui pengampu baru');
+    }
+
+    public function test_previous_course_lecturer_cannot_manage_assignment_after_course_reassignment(): void
+    {
+        $previousLecturer = User::factory()->dosen()->create();
+        $currentLecturer = User::factory()->dosen()->create();
+        $course = Course::factory()->create([
+            'lecturer_id' => $currentLecturer->id,
+        ]);
+        $assignment = Assignment::factory()->create([
+            'course_id' => $course->id,
+            'created_by' => $previousLecturer->id,
+        ]);
+
+        $this->actingAs($previousLecturer, 'sanctum')
+            ->deleteJson("/api/v1/assignments/{$assignment->id}")
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('assignments', ['id' => $assignment->id]);
+    }
+
+    public function test_student_assignment_list_never_includes_drafts_even_when_requested(): void
+    {
+        $student = User::factory()->mahasiswa()->create();
+        $course = Course::factory()->create();
+        $course->students()->attach($student->id, ['enrolled_at' => now()]);
+        $draft = Assignment::factory()->draft()->create(['course_id' => $course->id]);
+
+        $this->actingAs($student, 'sanctum')
+            ->getJson("/api/v1/courses/{$course->id}/assignments?status=draft")
+            ->assertOk()
+            ->assertJsonMissing(['id' => $draft->id]);
+    }
 }
