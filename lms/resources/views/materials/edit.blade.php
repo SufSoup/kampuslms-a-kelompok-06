@@ -1,7 +1,11 @@
 <x-layout title="Edit Materi — {{ $material->title }}">
+    @php
+        $routePrefix = auth()->user()->role === 'admin' ? 'admin' : 'dosen';
+        $courseRoute = $routePrefix . '.courses.show';
+    @endphp
     <div style="max-width: 640px; margin: 0 auto;">
         <div style="margin-bottom: 24px;">
-            <a href="{{ auth()->user()->role === 'admin' ? route('admin.courses.show', $course) : route('dosen.courses.show', $course) }}" style="font-size: 14px; color: #6E6E73;">
+            <a href="{{ route($courseRoute, $course) }}" style="font-size: 14px; color: #6E6E73;">
                 ← Kembali ke {{ $course->name }}
             </a>
             <h1 style="font-size: 32px; margin-top: 12px; margin-bottom: 4px;">Edit Materi</h1>
@@ -16,7 +20,7 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('dosen.materials.update', $material) }}" style="display: flex; flex-direction: column; gap: 18px;">
+        <form method="POST" enctype="multipart/form-data" action="{{ route($routePrefix . '.materials.update', $material) }}" style="display: flex; flex-direction: column; gap: 18px;">
             @csrf
             @method('PUT')
 
@@ -38,22 +42,44 @@
                 <textarea id="description" name="description" rows="4">{{ old('description', $material->description) }}</textarea>
             </div>
 
-            <div>
+            <div data-material-link>
                 <label for="external_url">URL (untuk tautan)</label>
                 <input type="url" id="external_url" name="external_url" value="{{ old('external_url', $material->external_url) }}" placeholder="https://example.com">
             </div>
 
-            <div>
-                <label for="file_path">Lokasi berkas (opsional)</label>
-                <input type="text" id="file_path" name="file_path" value="{{ old('file_path', $material->file_path) }}" placeholder="storage/uploads/materi.pdf">
+            <div data-material-file>
+                @if ($material->original_name)
+                    <p>Berkas saat ini: {{ $material->original_name }}</p>
+                @endif
+                <label for="file">Ganti berkas materi (PDF, Word, PowerPoint, Excel, TXT, atau ZIP; maksimal 20 MB)</label>
+                <input type="file" id="file" name="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.zip">
             </div>
 
             <div style="display: flex; gap: 12px;">
                 <button type="submit">Perbarui Materi</button>
-                <a href="{{ auth()->user()->role === 'admin' ? route('admin.courses.show', $course) : route('dosen.courses.show', $course) }}" style="display: inline-flex; align-items: center; padding: 10px 20px; border-radius: 980px; font-size: 14px; color: #1D1D1F; border: 1px solid #E5E5EA; text-decoration: none;">
+                <a href="{{ route($courseRoute, $course) }}" style="display: inline-flex; align-items: center; padding: 10px 20px; border-radius: 980px; font-size: 14px; color: #1D1D1F; border: 1px solid #E5E5EA; text-decoration: none;">
                     Batal
                 </a>
             </div>
         </form>
     </div>
+    <script>
+        const typeSelect = document.getElementById('type');
+        const fileField = document.querySelector('[data-material-file]');
+        const linkField = document.querySelector('[data-material-link]');
+        const fileInput = document.getElementById('file');
+        const urlInput = document.getElementById('external_url');
+        const hasCurrentFile = {{ $material->file_path ? 'true' : 'false' }};
+
+        function updateMaterialFields() {
+            const isFile = typeSelect.value === 'file';
+            fileField.hidden = !isFile;
+            linkField.hidden = !typeSelect.value || isFile;
+            fileInput.required = isFile && !hasCurrentFile;
+            urlInput.required = typeSelect.value === 'link';
+        }
+
+        typeSelect.addEventListener('change', updateMaterialFields);
+        updateMaterialFields();
+    </script>
 </x-layout>
