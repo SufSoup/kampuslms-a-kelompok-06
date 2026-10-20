@@ -10,6 +10,7 @@ use App\Models\LearningResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Gate;
 
 class LearningResourceController extends Controller
 {
@@ -18,7 +19,7 @@ class LearningResourceController extends Controller
      */
     public function index(Request $request, Course $course): AnonymousResourceCollection
     {
-        $this->authorizeCourseAccess($request->user(), $course);
+        Gate::authorize('view', $course);
 
         $resources = $course->learningResources()
             ->with('curator')
@@ -34,12 +35,9 @@ class LearningResourceController extends Controller
      */
     public function store(StoreLearningResourceRequest $request, Course $course): JsonResponse
     {
+        Gate::authorize('create', [LearningResource::class, $course]);
+
         $user = $request->user();
-
-        // Only the course lecturer or admin can curate learning resources
-        $canCurate = $user->role === 'admin' || ($user->role === 'dosen' && $course->lecturer_id === $user->id);
-        abort_unless($canCurate, 403, 'Anda tidak memiliki hak untuk menambah sumber belajar pada mata kuliah ini.');
-
         $validated = $request->validated();
         $resource = new LearningResource($validated);
         $resource->course_id = $course->id;
@@ -58,7 +56,7 @@ class LearningResourceController extends Controller
      */
     public function show(Request $request, LearningResource $resource): LearningResourceResource
     {
-        $this->authorizeCourseAccess($request->user(), $resource->course);
+        Gate::authorize('view', $resource);
 
         $resource->load('curator');
 
@@ -71,13 +69,9 @@ class LearningResourceController extends Controller
      */
     public function toggleRead(Request $request, LearningResource $resource): JsonResponse
     {
+        Gate::authorize('toggleRead', $resource);
+
         $user = $request->user();
-        $course = $resource->course;
-
-        // User must be enrolled in the course to mark resource as read
-        $isEnrolled = $course->students()->where('users.id', $user->id)->exists();
-        abort_unless($isEnrolled, 403, 'Anda belum terdaftar pada mata kuliah ini.');
-
         $existing = $resource->readers()->where('users.id', $user->id)->first();
 
         if ($existing) {
@@ -101,25 +95,5 @@ class LearningResourceController extends Controller
             'read_at' => $now->toIso8601String(),
             'message' => 'Status sumber belajar ditandai sudah dibaca.',
         ]);
-    }
-
-    /**
-     * Check if user is allowed to view resources in the given course.
-     */
-    protected function authorizeCourseAccess($user, Course $course): void
-    {
-        if ($user->role === 'admin') {
-            return;
-        }
-
-        if ($user->role === 'dosen' && $course->lecturer_id === $user->id) {
-            return;
-        }
-
-        if ($user->role === 'mahasiswa' && $course->students()->where('users.id', $user->id)->exists()) {
-            return;
-        }
-
-        abort(403, 'Anda tidak memiliki akses ke sumber daya ini.');
     }
 }

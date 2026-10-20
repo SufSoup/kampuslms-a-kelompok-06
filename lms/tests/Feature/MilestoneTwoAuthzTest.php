@@ -102,9 +102,13 @@ class MilestoneTwoAuthzTest extends TestCase
         $course->students()->attach($student->id, ['enrolled_at' => now()]);
         $published = Assignment::factory()->create([
             'course_id' => $course->id,
+            'title' => 'Tugas Terbit Mahasiswa',
             'status' => 'published',
         ]);
-        $draft = Assignment::factory()->draft()->create(['course_id' => $course->id]);
+        $draft = Assignment::factory()->draft()->create([
+            'course_id' => $course->id,
+            'title' => 'Tugas Draft Belum Terbit',
+        ]);
 
         $this->actingAs($student)
             ->get(route('mahasiswa.assignments.index'))

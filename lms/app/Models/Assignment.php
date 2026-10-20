@@ -18,6 +18,7 @@ class Assignment extends Model
         'due_at',
         'max_score',
         'allow_late',
+        'status',
     ];
 
     protected function casts(): array
