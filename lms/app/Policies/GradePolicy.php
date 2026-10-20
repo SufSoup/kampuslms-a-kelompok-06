@@ -48,11 +48,14 @@ class GradePolicy
     }
 
     /**
-     * Hanya dosen yang boleh membuat nilai.
-     * Kewenangan terhadap mata kuliah diperiksa di controller.
+     * Dosen pengampu dan admin boleh membuat nilai.
      */
     public function create(User $user, Submission $submission): bool
     {
+        if ($user->role === 'admin') {
+            return true;
+        }
+
         $course = $submission->assignment?->course;
 
         return $user->role === 'dosen'
@@ -61,10 +64,14 @@ class GradePolicy
     }
 
     /**
-     * Hanya dosen pengampu yang boleh mengubah nilai.
+     * Dosen pengampu dan admin boleh mengubah nilai.
      */
     public function update(User $user, Grade $grade): bool
     {
+        if ($user->role === 'admin') {
+            return true;
+        }
+
         if ($user->role !== 'dosen') {
             return false;
         }
@@ -76,7 +83,7 @@ class GradePolicy
     }
 
     /**
-     * Hanya dosen pengampu yang boleh menghapus nilai.
+     * Dosen pengampu dan admin boleh menghapus nilai.
      */
     public function delete(User $user, Grade $grade): bool
     {

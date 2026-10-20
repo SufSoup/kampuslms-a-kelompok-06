@@ -82,7 +82,14 @@ class AssignmentController extends Controller
 
         $assignment->load(['course', 'creator']);
 
-        return view('assignments.show', compact('assignment'));
+        $submission = null;
+        if (auth()->check() && auth()->user()->role === 'mahasiswa') {
+            $submission = $assignment->submissions()
+                ->where('user_id', auth()->id())
+                ->first();
+        }
+
+        return view('assignments.show', compact('assignment', 'submission'));
     }
 
     public function edit(Assignment $assignment)

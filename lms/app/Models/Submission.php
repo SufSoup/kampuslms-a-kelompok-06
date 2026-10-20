@@ -12,7 +12,14 @@ class Submission extends Model
     use HasFactory;
 
     protected $fillable = [
+        'assignment_id',
+        'user_id',
+        'file_path',
+        'original_name',
+        'file_size',
         'note',
+        'submitted_at',
+        'is_late',
     ];
 
     protected function casts(): array

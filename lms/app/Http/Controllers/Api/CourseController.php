@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Gate;
 
 class CourseController extends Controller
 {
@@ -31,7 +32,7 @@ class CourseController extends Controller
      */
     public function show(Request $request, Course $course): CourseResource
     {
-        abort_unless($this->canAccessCourse($request->user(), $course), 403);
+        Gate::authorize('view', $course);
 
         $course->load('lecturer')->loadCount(['materials', 'assignments']);
 
@@ -55,16 +56,6 @@ class CourseController extends Controller
                 fn (Builder $students) => $students->whereKey($user->id)
             ),
             default => abort(403, 'Anda tidak memiliki akses ke mata kuliah.'),
-        };
-    }
-
-    private function canAccessCourse(User $user, Course $course): bool
-    {
-        return match ($user->role) {
-            'admin' => true,
-            'dosen' => $course->lecturer_id === $user->id,
-            'mahasiswa' => $course->students()->whereKey($user->id)->exists(),
-            default => false,
         };
     }
 }
