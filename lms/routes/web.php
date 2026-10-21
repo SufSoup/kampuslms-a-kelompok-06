@@ -107,6 +107,9 @@ Route::middleware('auth')->group(function () {
             Route::get('/assignments', [AssignmentController::class, 'index'])
                 ->name('assignments.index');
 
+            Route::get('/assignments/{assignment}/submissions', [SubmissionController::class, 'index'])
+                ->name('assignments.submissions.index');
+
             Route::get('/submissions/{submission}', [SubmissionController::class, 'show'])
                 ->name('submissions.show');
         });
