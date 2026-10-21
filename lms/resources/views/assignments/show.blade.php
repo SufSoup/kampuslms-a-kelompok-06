@@ -83,6 +83,7 @@
     @endif
 
     @if (auth()->user()->role === 'dosen')
+        <p><a href="{{ route('dosen.assignments.submissions.index', $assignment) }}">Monitoring Pengumpulan</a></p>
         <a href="{{ route('dosen.assignments.edit', $assignment) }}">Edit Tugas</a>
         <form method="POST" action="{{ route('dosen.assignments.destroy', $assignment) }}" onsubmit="return confirm('Hapus tugas ini?');">
             @csrf
