@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreSubmissionRequest;
 use App\Models\Assignment;
 use App\Models\Submission;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
@@ -13,6 +14,37 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SubmissionController extends Controller
 {
+    public function index(Assignment $assignment)
+    {
+        Gate::authorize('viewAny', [Submission::class, $assignment]);
+
+        $assignment->load('course');
+
+        $students = $assignment->course->students()
+            ->where('users.role', 'mahasiswa')
+            ->with([
+                'submissions' => fn (HasMany $query) => $query
+                    ->where('assignment_id', $assignment->id)
+                    ->with('grade'),
+            ])
+            ->orderBy('users.name')
+            ->get();
+
+        $registeredCount = $students->count();
+        $submittedCount = $students->filter(
+            fn ($student) => $student->submissions->isNotEmpty()
+        )->count();
+        $notSubmittedCount = $registeredCount - $submittedCount;
+
+        return view('dosen.submissions.index', compact(
+            'assignment',
+            'students',
+            'registeredCount',
+            'submittedCount',
+            'notSubmittedCount'
+        ));
+    }
+
     public function store(StoreSubmissionRequest $request, Assignment $assignment): RedirectResponse
     {
         Gate::authorize('create', [Submission::class, $assignment]);
