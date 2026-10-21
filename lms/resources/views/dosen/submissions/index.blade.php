@@ -35,18 +35,7 @@
                         @if ($submission)
                             <td>Sudah mengumpulkan</td>
                             <td>{{ $submission->original_name }}</td>
-                            <td>
-                                @php
-                                    $fileSize = $submission->file_size;
-                                    $fileSizeUnits = ['B', 'KB', 'MB', 'GB', 'TB'];
-                                    $fileSizeUnitIndex = 0;
-                                    while ($fileSize >= 1024 && $fileSizeUnitIndex < count($fileSizeUnits) - 1) {
-                                        $fileSize /= 1024;
-                                        $fileSizeUnitIndex++;
-                                    }
-                                @endphp
-                                {{ number_format($fileSize, $fileSizeUnitIndex === 0 ? 0 : 1) }} {{ $fileSizeUnits[$fileSizeUnitIndex] }}
-                            </td>
+                            <td>{{ $submission->formatted_file_size }}</td>
                             <td>{{ $submission->submitted_at?->format('d M Y H:i') ?? '-' }}</td>
                             <td>{{ $submission->is_late ? 'Terlambat' : 'Tepat waktu' }}</td>
                             <td>{{ $submission->grade?->score ?? 'Belum dinilai' }}</td>
