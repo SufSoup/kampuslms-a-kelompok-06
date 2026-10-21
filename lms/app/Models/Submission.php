@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 
 class Submission extends Model
 {
@@ -30,6 +32,19 @@ class Submission extends Model
             'submitted_at' => 'datetime',
             'is_late' => 'boolean',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::deleting(static function (Submission $submission): void {
+            if (
+                $submission->file_path
+                && Storage::disk('local')->exists($submission->file_path)
+                && ! Storage::disk('local')->delete($submission->file_path)
+            ) {
+                throw new RuntimeException('Berkas submission gagal dihapus dari penyimpanan.');
+            }
+        });
     }
 
     public function assignment(): BelongsTo
