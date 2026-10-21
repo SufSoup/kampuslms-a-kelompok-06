@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasFormattedFileSize;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Material extends Model
 {
-    use HasFactory;
+    use HasFactory, HasFormattedFileSize;
 
     protected $fillable = [
         'title',

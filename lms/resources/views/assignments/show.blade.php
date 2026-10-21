@@ -33,7 +33,7 @@
         @if ($submission)
             <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
                 <p><strong>Status:</strong> <span style="color: #059669; font-weight: bold;">Sudah Mengumpulkan</span></p>
-                <p><strong>Berkas:</strong> {{ $submission->original_name }} ({{ round($submission->file_size / 1024, 1) }} KB)</p>
+                <p><strong>Berkas:</strong> {{ $submission->original_name }} ({{ $submission->formatted_file_size }})</p>
                 <p><strong>Waktu Pengumpulan:</strong> {{ $submission->submitted_at?->format('d M Y H:i') }}</p>
                 <p>
                     <strong>Ketepatan Waktu:</strong>
