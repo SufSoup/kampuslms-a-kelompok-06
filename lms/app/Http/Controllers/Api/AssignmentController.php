@@ -84,6 +84,12 @@ class AssignmentController extends Controller
     ): JsonResponse {
         Gate::authorize('delete', $assignment);
 
+        $assignment->submissions()->chunkById(100, static function ($submissions): void {
+            foreach ($submissions as $submission) {
+                $submission->delete();
+            }
+        });
+
         $assignment->delete();
 
         return response()->json(null, 204);

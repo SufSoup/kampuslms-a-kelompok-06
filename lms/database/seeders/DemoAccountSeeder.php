@@ -34,6 +34,13 @@ class DemoAccountSeeder extends Seeder
                 'role' => 'mahasiswa',
                 'nim_nip' => '2024105001',
             ],
+            [
+                'email' => 'mahasiswa2@kampuslms.test',
+                'name' => 'Mahasiswa IDOR Test',
+                'password' => 'password',
+                'role' => 'mahasiswa',
+                'nim_nip' => null,
+            ],
         ];
 
         foreach ($accounts as $account) {

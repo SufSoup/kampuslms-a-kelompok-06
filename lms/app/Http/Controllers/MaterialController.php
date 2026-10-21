@@ -123,12 +123,7 @@ class MaterialController extends Controller
         Gate::authorize('delete', $material);
 
         $course = $material->course;
-        $filePath = $material->file_path;
         $material->delete();
-
-        if ($filePath) {
-            $this->deleteStoredFile($filePath);
-        }
 
         return redirect()->route($this->routePrefix(auth()->user()->role).'.courses.materials.index', $course)
             ->with('success', 'Materi berhasil dihapus.');
