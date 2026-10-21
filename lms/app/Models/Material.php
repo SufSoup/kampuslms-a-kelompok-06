@@ -6,6 +6,8 @@ use App\Models\Concerns\HasFormattedFileSize;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 
 class Material extends Model
 {
@@ -24,6 +26,19 @@ class Material extends Model
         return [
             'file_size' => 'integer',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::deleting(static function (Material $material): void {
+            if (
+                $material->file_path
+                && Storage::disk('local')->exists($material->file_path)
+                && ! Storage::disk('local')->delete($material->file_path)
+            ) {
+                throw new RuntimeException('Berkas materi gagal dihapus dari penyimpanan.');
+            }
+        });
     }
 
     public function course(): BelongsTo

@@ -58,7 +58,12 @@ class DatabaseSeeder extends Seeder
                 'nim_nip' => '2024105001',
                 'password' => 'password',
             ]),
-            ...User::factory()->mahasiswa()->count(29)->create()->all(),
+            User::factory()->mahasiswa()->create([
+                'name' => 'Mahasiswa IDOR Test',
+                'email' => 'mahasiswa2@kampuslms.test',
+                'password' => 'password',
+            ]),
+            ...User::factory()->mahasiswa()->count(28)->create()->all(),
         ]);
 
         /*
@@ -110,6 +115,14 @@ class DatabaseSeeder extends Seeder
                     ]
                 )->all()
             );
+        }
+
+        $firstCourse = $courses->first();
+        $demoStudent = $mahasiswa->firstWhere('email', 'mahasiswa@kampuslms.test');
+        if ($firstCourse && $demoStudent) {
+            $firstCourse->students()->syncWithoutDetaching([
+                $demoStudent->id => ['enrolled_at' => now()],
+            ]);
         }
 
         /*
