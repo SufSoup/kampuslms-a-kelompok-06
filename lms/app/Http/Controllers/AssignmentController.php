@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Assignment;
 use App\Models\Course;
+use App\Models\Submission;
 use App\Http\Requests\StoreAssignmentRequest;
 use App\Http\Requests\UpdateAssignmentRequest;
 use Illuminate\Http\Request;
@@ -126,6 +127,12 @@ class AssignmentController extends Controller
     public function destroy(Assignment $assignment)
     {
         Gate::authorize('delete', $assignment);
+
+        $assignment->submissions()->chunkById(100, static function ($submissions): void {
+            $submissions->each(static function (Submission $submission): void {
+                $submission->delete();
+            });
+        });
 
         $assignment->delete();
 

@@ -29,6 +29,22 @@ expect_status() {
     echo "[PASS] $label (HTTP $actual)"
 }
 
+expect_guest_status() {
+    local label="$1"
+    local expected="$2"
+    local path="$3"
+    local actual
+
+    actual="$(curl --silent --show-error --output "$TMP_DIR/guest-response.html" \
+        --write-out '%{http_code}' "$APP_URL$path")"
+
+    if [[ "$actual" != "$expected" ]]; then
+        fail "$label: diharapkan HTTP $expected, didapat HTTP $actual ($path)"
+    fi
+
+    echo "[PASS] $label (HTTP $actual)"
+}
+
 login_as() {
     local role="$1"
     local email="$2"
@@ -70,11 +86,13 @@ login_as "admin" "admin@kampuslms.test" "password"
 login_as "dosen" "dosen@kampuslms.test" "password"
 login_as "dosen2" "budi.dosen@kampuslms.test" "password"
 login_as "mahasiswa" "mahasiswa@kampuslms.test" "password"
+login_as "mahasiswa2" "mahasiswa2@kampuslms.test" "password"
 
 ADMIN_COOKIE="$TMP_DIR/admin.cookies"
 DOSEN_COOKIE="$TMP_DIR/dosen.cookies"
 DOSEN2_COOKIE="$TMP_DIR/dosen2.cookies"
 MAHASISWA_COOKIE="$TMP_DIR/mahasiswa.cookies"
+MAHASISWA2_COOKIE="$TMP_DIR/mahasiswa2.cookies"
 
 # ============================================================
 # 1. OTORISASI BERBASIS PERAN (RBAC)
@@ -137,5 +155,24 @@ if [[ -n "$UNENROLLED_ID" ]]; then
     expect_status "IDOR: Mahasiswa ditolak mengakses MK yang tidak diikuti (ID: $UNENROLLED_ID)" "403" "/mahasiswa/courses/$UNENROLLED_ID" "$MAHASISWA_COOKIE"
     expect_status "IDOR: Mahasiswa ditolak melihat materi MK yang tidak diikuti (ID: $UNENROLLED_ID)" "403" "/mahasiswa/courses/$UNENROLLED_ID/materials" "$MAHASISWA_COOKIE"
 fi
+
+curl --silent --show-error --output "$TMP_DIR/mahasiswa-assignments.html" \
+    --cookie "$MAHASISWA_COOKIE" "$APP_URL/mahasiswa/assignments"
+ASSIGNMENT_IDS="$(grep --only-matching --extended-regexp '/mahasiswa/assignments/[0-9]+' "$TMP_DIR/mahasiswa-assignments.html" | sed 's|/mahasiswa/assignments/||' | sort -u || true)"
+SUBMISSION_DOWNLOAD_PATH=""
+
+for assignment_id in $ASSIGNMENT_IDS; do
+    curl --silent --show-error --output "$TMP_DIR/assignment-show.html" \
+        --cookie "$MAHASISWA_COOKIE" "$APP_URL/mahasiswa/assignments/$assignment_id"
+    SUBMISSION_DOWNLOAD_PATH="$(grep --only-matching --extended-regexp '/submissions/[0-9]+/download' "$TMP_DIR/assignment-show.html" | head -n 1 || true)"
+
+    if [[ -n "$SUBMISSION_DOWNLOAD_PATH" ]]; then
+        break
+    fi
+done
+
+[[ -n "$SUBMISSION_DOWNLOAD_PATH" ]] || fail "Tidak ada submission seed yang dapat digunakan untuk uji IDOR berkas. Jalankan seeder terlebih dahulu."
+expect_guest_status "Guest ditolak mengunduh submission privat" "302" "$SUBMISSION_DOWNLOAD_PATH"
+expect_status "IDOR: Mahasiswa 2 ditolak mengunduh submission milik mahasiswa lain" "403" "$SUBMISSION_DOWNLOAD_PATH" "$MAHASISWA2_COOKIE"
 
 echo "[PASS] Semua pemeriksaan autentikasi, otorisasi RBAC, dan proteksi IDOR berhasil."
