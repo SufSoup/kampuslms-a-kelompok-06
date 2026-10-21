@@ -52,10 +52,14 @@ class AssignmentPolicy
     }
 
     /**
-     * Hanya dosen yang dapat membuat tugas.
+     * Dosen pengampu dan admin dapat membuat tugas.
      */
     public function create(User $user, ?Course $course = null): bool
     {
+        if ($user->role === 'admin') {
+            return true;
+        }
+
         if ($user->role !== 'dosen') {
             return false;
         }
@@ -65,17 +69,21 @@ class AssignmentPolicy
     }
 
     /**
-     * Hanya dosen pengampu yang dapat mengubah tugas.
+     * Dosen pengampu dan admin dapat mengubah tugas.
      */
     public function update(User $user, Assignment $assignment): bool
     {
+        if ($user->role === 'admin') {
+            return true;
+        }
+
         return $user->role === 'dosen'
             && $assignment->course !== null
             && (int) $assignment->course->lecturer_id === (int) $user->id;
     }
 
     /**
-     * Hanya dosen pengampu yang dapat menghapus tugas.
+     * Dosen pengampu dan admin dapat menghapus tugas.
      */
     public function delete(User $user, Assignment $assignment): bool
     {
