@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\AssignmentPublished;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\AssignmentResource;
 use App\Models\Course;
@@ -55,6 +56,10 @@ class AssignmentController extends Controller
         $assignment->status = $request->status;
         $assignment->save();
 
+        if ($assignment->status === 'published') {
+            AssignmentPublished::dispatch($assignment);
+        }
+
         $assignment->load('creator');
 
         return (new AssignmentResource($assignment))
@@ -68,8 +73,13 @@ class AssignmentController extends Controller
     ): JsonResponse {
         Gate::authorize('update', $assignment);
 
+        $wasPublished = $assignment->getOriginal('status') === 'published';
         $assignment->fill($request->validated());
         $assignment->save();
+
+        if ($assignment->status === 'published' && ! $wasPublished) {
+            AssignmentPublished::dispatch($assignment);
+        }
 
         $assignment->load('creator');
 

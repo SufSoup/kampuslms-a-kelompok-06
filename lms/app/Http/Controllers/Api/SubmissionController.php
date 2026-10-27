@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\GradeGiven;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\SubmissionResource;
 use App\Models\Assignment;
@@ -107,6 +108,8 @@ class SubmissionController extends Controller
         }
 
         $grade->load('grader');
+
+        GradeGiven::dispatch($grade);
 
         return (new \App\Http\Resources\GradeResource($grade))
             ->response()
