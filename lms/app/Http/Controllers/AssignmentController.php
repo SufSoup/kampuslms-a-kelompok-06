@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\AssignmentPublished;
 use App\Models\Assignment;
 use App\Models\Course;
 use App\Models\Submission;
@@ -72,6 +73,10 @@ class AssignmentController extends Controller
         $assignment->status = $validated['status'];
         $assignment->save();
 
+        if ($assignment->status === 'published') {
+            AssignmentPublished::dispatch($assignment);
+        }
+
         return redirect()
             ->route('dosen.assignments.show', $assignment)
             ->with('success', 'Tugas berhasil dibuat.');
@@ -116,8 +121,13 @@ class AssignmentController extends Controller
             'allow_late' => $validated['allow_late'],
         ]);
 
+        $wasPublished = $assignment->getOriginal('status') === 'published';
         $assignment->status = $validated['status'];
         $assignment->save();
+
+        if ($assignment->status === 'published' && ! $wasPublished) {
+            AssignmentPublished::dispatch($assignment);
+        }
 
         return redirect()
             ->route('dosen.assignments.show', $assignment)
