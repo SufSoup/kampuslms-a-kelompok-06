@@ -45,6 +45,30 @@ expect_guest_status() {
     echo "[PASS] $label (HTTP $actual)"
 }
 
+expect_status_any() {
+    local label="$1"
+    local expected_first="$2"
+    local expected_second="$3"
+    local path="$4"
+    local cookie_file="$5"
+    local role="${cookie_file##*/}"
+    local actual
+    role="${role%.cookies}"
+
+    actual="$(curl --silent --show-error --output "$TMP_DIR/response.html" \
+        --write-out '%{http_code}' \
+        --request POST \
+        --cookie "$cookie_file" \
+        --data-urlencode "_token=$(cat "$TMP_DIR/$role.csrf")" \
+        "$APP_URL$path")"
+
+    if [[ "$actual" != "$expected_first" && "$actual" != "$expected_second" ]]; then
+        fail "$label: diharapkan HTTP $expected_first atau $expected_second, didapat HTTP $actual ($path)"
+    fi
+
+    echo "[PASS] $label (HTTP $actual)"
+}
+
 login_as() {
     local role="$1"
     local email="$2"
@@ -67,6 +91,7 @@ login_as() {
         --data-urlencode "password=$password" \
         "$APP_URL/login")"
     [[ "$status" == "302" ]] || fail "Login $role gagal (HTTP $status)."
+    printf '%s' "$token" > "$TMP_DIR/$role.csrf"
 
     expect_status "Login/dashboard $role" "200" "/dashboard" "$cookie_file"
 }
@@ -81,6 +106,45 @@ course_path_from_page() {
     printf '%s' "$path"
 }
 
+api_login_as() {
+    local role="$1"
+    local email="$2"
+    local password="$3"
+    local response_file="$TMP_DIR/$role-api-login.json"
+    local token
+
+    curl --silent --show-error --fail \
+        --header "Accept: application/json" \
+        --header "Content-Type: application/json" \
+        --data "{\"email\":\"$email\",\"password\":\"$password\",\"device_name\":\"test-authz-$role\"}" \
+        "$APP_URL/api/v1/auth/login" > "$response_file"
+    token="$(sed -n 's/.*"token":"\([^"]*\)".*/\1/p' "$response_file")"
+    [[ -n "$token" ]] || fail "Token API tidak ditemukan untuk $role."
+    printf '%s' "$token" > "$TMP_DIR/$role-api.token"
+}
+
+expect_api_status() {
+    local label="$1"
+    local expected="$2"
+    local method="$3"
+    local path="$4"
+    local token_file="$5"
+    local actual
+
+    actual="$(curl --silent --show-error --output "$TMP_DIR/api-response.json" \
+        --write-out '%{http_code}' \
+        --request "$method" \
+        --header "Accept: application/json" \
+        --header "Authorization: Bearer $(cat "$token_file")" \
+        "$APP_URL$path")"
+
+    if [[ "$actual" != "$expected" ]]; then
+        fail "$label: diharapkan HTTP $expected, didapat HTTP $actual ($path)"
+    fi
+
+    echo "[PASS] $label (HTTP $actual)"
+}
+
 echo "[INFO] Menguji autentikasi web dan otorisasi multi-role di $APP_URL"
 login_as "admin" "admin@kampuslms.test" "password"
 login_as "dosen" "dosen@kampuslms.test" "password"
@@ -93,6 +157,25 @@ DOSEN_COOKIE="$TMP_DIR/dosen.cookies"
 DOSEN2_COOKIE="$TMP_DIR/dosen2.cookies"
 MAHASISWA_COOKIE="$TMP_DIR/mahasiswa.cookies"
 MAHASISWA2_COOKIE="$TMP_DIR/mahasiswa2.cookies"
+
+api_login_as "mahasiswa" "mahasiswa@kampuslms.test" "password"
+api_login_as "mahasiswa2" "mahasiswa2@kampuslms.test" "password"
+expect_guest_status "Guest ditolak mengakses notifikasi API" "401" "/api/v1/notifications"
+
+curl --silent --show-error \
+    --header "Accept: application/json" \
+    --header "Authorization: Bearer $(cat "$TMP_DIR/mahasiswa-api.token")" \
+    "$APP_URL/api/v1/notifications?page=1" > "$TMP_DIR/mahasiswa-notifications.json"
+NOTIFICATION_ID="$(grep --only-matching --extended-regexp '"id":"[0-9a-f-]{36}"' "$TMP_DIR/mahasiswa-notifications.json" | head -n 1 | sed 's/"id":"//; s/"$//' || true)"
+
+if [[ -n "$NOTIFICATION_ID" ]]; then
+    expect_api_status "IDOR: mahasiswa 2 ditolak menandai notifikasi mahasiswa 1" \
+        "404" "POST" "/api/v1/notifications/$NOTIFICATION_ID/read" "$TMP_DIR/mahasiswa2-api.token"
+    expect_status_any "IDOR: mahasiswa 2 ditolak menandai notifikasi web mahasiswa 1" \
+        "404" "403" "/notifications/$NOTIFICATION_ID/read" "$MAHASISWA2_COOKIE"
+else
+    echo "[SKIP] Tidak ada notifikasi seed untuk uji IDOR mark-as-read."
+fi
 
 # ============================================================
 # 1. OTORISASI BERBASIS PERAN (RBAC)
