@@ -1,10 +1,10 @@
 # Catatan Minggu 10 Pemrograman Web
 
-**Nama:** Muhammad Farraz Kanz  
-**NIM:** 10241047  
-**Kelompok:** Kelompok 06 (Kelas A)  
-**Topik:** UI Notifikasi Web dan Queue Worker  
-**Branch tugas:** `paras`
+**Nama:** Muhammad Farras Kanz
+**NIM:** 10241047
+**Kelompok:** Kelompok 06 (Kelas A)
+**Topik:** UI Notifikasi Web dan Queue Worker
+**Branch tugas:** `feat/w10-notification-ui`
 
 ---
 
@@ -50,7 +50,7 @@ Skenario yang mengubah konfigurasi, kode Listener, atau payload sensitif tidak d
 - `lms/routes/api.php` dan `lms/app/Http/Controllers/Api/NotificationController.php` — session web untuk GET polling dengan autentikasi tetap aktif dan `meta.unread_count` pada respons.
 - `lms/tests/Feature/NotificationWebTest.php` dan `lms/tests/Feature/Api/NotificationApiTest.php` — pengujian UI, anti-IDOR, pagination, count, serta autentikasi polling.
 - `README.md` — petunjuk menjalankan dan menghentikan database queue worker.
-- `docs/Minggu-10/minggu-10-farraz.md` — catatan READ dan BREAK berbasis bukti serta ringkasan BUILD ini.
+- `docs/Minggu-10/minggu-10-farras.md` — catatan READ dan BREAK berbasis bukti serta ringkasan BUILD ini.
 
 Tidak ada perubahan schema/migrasi, Event, Listener, Notification core, grading, atau queue reliability dalam tugas ini.
 
@@ -68,4 +68,4 @@ Test suite menggunakan SQLite in-memory dan `QUEUE_CONNECTION=sync` dari `phpuni
 
 `php artisan event:list` menampilkan `SendAssignmentNotification` dua kali untuk `AssignmentPublished`—sebagai listener class dan `@handle`. Ini berpotensi menyebabkan pemrosesan ganda dan berada di luar ruang lingkup UI Farraz; pemilik Event/Listener perlu meninjau pendaftarannya. Eksperimen job database, retry, dan pemulihan worker tetap belum dilakukan.
 
-Tidak ada commit baru yang dibuat untuk pekerjaan ini. Jalankan `php artisan queue:work` pada terminal terpisah di direktori `lms/` untuk pemeriksaan manual queue lokal; hentikan dengan `Ctrl+C`. Gunakan database dan akun dummy bila melanjutkan eksperimen BREAK.
+Perubahan fitur, dokumentasi mingguan, dan penghapusan salinan Week 1 disimpan sebagai commit terpisah. Jalankan `php artisan queue:work` pada terminal terpisah di direktori `lms/` untuk pemeriksaan manual queue lokal; hentikan dengan `Ctrl+C`. Gunakan database dan akun dummy bila melanjutkan eksperimen BREAK.
