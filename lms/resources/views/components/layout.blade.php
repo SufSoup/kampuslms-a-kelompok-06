@@ -29,6 +29,17 @@
 
         <div style="display: flex; gap: 16px; align-items: center;">
             @auth
+                @php($unreadNotificationCount = auth()->user()->unreadNotifications()->count())
+                <a href="{{ route('notifications.index') }}"
+                    aria-label="Notifikasi, {{ $unreadNotificationCount }} belum dibaca"
+                    style="display: inline-flex; align-items: center; gap: 6px; color: #1D1D1F; text-decoration: none;">
+                    <span aria-hidden="true" style="font-size: 18px;">🔔</span>
+                    <span data-notification-unread-count="{{ $unreadNotificationCount }}" aria-live="polite" @if ($unreadNotificationCount === 0) hidden @endif
+                        style="min-width: 20px; padding: 2px 6px; border-radius: 999px; background: #DC2626; color: #FFFFFF; font-size: 12px; font-weight: 700; text-align: center;">
+                        {{ $unreadNotificationCount }}
+                    </span>
+                </a>
+
                 <div style="display: flex; align-items: center; gap: 10px; font-size: 14px;">
                     <span style="display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; background: #E5E5EA; color: #1D1D1F;">
                         {{ auth()->user()->role }}
@@ -71,5 +82,69 @@
 
         {{ $slot }}
     </main>
+
+    @auth
+        <script>
+            (() => {
+                const badge = document.querySelector('[data-notification-unread-count]');
+
+                if (!badge || window.kampusLmsNotificationPolling) {
+                    return;
+                }
+
+                let failureLogged = false;
+                const endpoint = @json(url('/api/v1/notifications?page=1'));
+
+                const pollUnreadCount = async () => {
+                    try {
+                        const response = await fetch(endpoint, {
+                            credentials: 'same-origin',
+                            headers: {
+                                Accept: 'application/json',
+                            },
+                        });
+
+                        if (!response.ok) {
+                            if (!failureLogged) {
+                                console.warn(`Polling notifikasi gagal dengan status ${response.status}.`);
+                                failureLogged = true;
+                            }
+
+                            if (response.status === 401 || response.status === 403) {
+                                window.clearInterval(window.kampusLmsNotificationPolling);
+                                window.kampusLmsNotificationPolling = null;
+                            }
+
+                            return;
+                        }
+
+                        const payload = await response.json();
+                        const unreadCount = payload?.meta?.unread_count;
+
+                        if (!Number.isInteger(unreadCount) || unreadCount < 0) {
+                            if (!failureLogged) {
+                                console.warn('Polling notifikasi menerima format respons yang tidak sesuai.');
+                                failureLogged = true;
+                            }
+
+                            return;
+                        }
+
+                        badge.textContent = String(unreadCount);
+                        badge.dataset.notificationUnreadCount = String(unreadCount);
+                        badge.hidden = unreadCount === 0;
+                        failureLogged = false;
+                    } catch (error) {
+                        if (!failureLogged) {
+                            console.warn('Polling notifikasi gagal karena masalah jaringan atau respons JSON.', error);
+                            failureLogged = true;
+                        }
+                    }
+                };
+
+                window.kampusLmsNotificationPolling = window.setInterval(pollUnreadCount, 30_000);
+            })();
+        </script>
+    @endauth
 </body>
 </html>
