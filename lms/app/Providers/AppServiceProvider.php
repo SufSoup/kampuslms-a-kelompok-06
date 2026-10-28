@@ -2,10 +2,7 @@
 
 namespace App\Providers;
 
-use App\Events\AssignmentPublished;
-use App\Listeners\SendAssignmentNotification;
 use Illuminate\Pagination\Paginator;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -25,6 +22,5 @@ class AppServiceProvider extends ServiceProvider
     {
         Paginator::defaultView('pagination::default');
 
-        Event::listen(AssignmentPublished::class, SendAssignmentNotification::class);
     }
 }
