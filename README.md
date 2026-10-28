@@ -1,92 +1,63 @@
-# KampusLMS — Kelompok 06 (Kelas A)
+# KampusLMS - Kelompok 06 (Kelas A)
 
-Sistem Informasi Manajemen Pembelajaran (*Learning Management System*) berbasis **Laravel 12**, dibangun secara kolaboratif untuk mata kuliah **Pemrograman Web (SI2514024)**, Semester Ganjil 2026/2027.
+Proyek ini adalah implementasi tugas Modul 1 (Mengenal Laravel 12) untuk pengembangan purwarupa Sistem Informasi Manajemen Pembelajaran (KampusLMS).
 
----
+## Daftar Anggota
 
-## Tim Pengembang (Kelompok 06 — Kelas A)
+| Nama Lengkap | NIM |
+| :--- | :--- |
+| Muhammad Farraz Kanz | 10241047 |
+| Muhammad Ikhsyan | 10241049 |
+| Muhammad Syahid Ridho | 10241051 |
+| Muhammad Yusuf Pratama | 10241053 |
 
-| Nama Lengkap | NIM | Peran Utama |
-| :--- | :---: | :--- |
-| **Muhammad Farraz Kanz** | `10241047` | CRUD Materi, CoursePolicy, MaterialPolicy, Dashboard Peran |
-| **Muhammad Ikhsyan** | `10241049` | Autentikasi, Session Hardening, Fitur 17 (LearningResourcePolicy), Test Auth |
-| **Muhammad Syahid Ridho** | `10241051` | CRUD Tugas, AssignmentPolicy, SubmissionPolicy, GradePolicy, Authz Test |
-| **Muhammad Yusuf Pratama** | `10241053` | Enrollment Mahasiswa, Query Filtering Mata Kuliah |
+## Cara Instalasi
 
----
+Ikuti langkah-langkah di bawah ini untuk menjalankan proyek secara lokal:
 
-## Fitur Diferensiasi: Fitur 17
+1. **Clone repositori**
+   ```bash
+   git clone [https://github.com/SufSoup/kampuslms-a-kelompok-06.git]
+   cd kampuslms-a-kelompok-06
+   ```
 
-Kelompok 06 mengimplementasikan **Fitur 17: Kurasi Sumber Belajar Tambahan & Penanda Baca**:
-- **Kurasi Referensi:** Dosen pengampu dan Admin dapat mengkurasi referensi belajar tambahan (artikel, video, buku, dokumentasi) per mata kuliah.
-- **Penanda Baca Anti-IDOR:** Mahasiswa terdaftar dapat menandai baca (*toggle mark read*). Rekam baca diikat mutlak ke `auth()->id()` sehingga tidak dapat memanipulasi status baca mahasiswa lain.
+2. **Install dependensi (Vendor)**
+   ```bash
+   composer install
+   ```
 
----
+3. **Siapkan pengaturan environment**
+   ```bash
+   cp .env.example .env
+   ```
 
-## Akun Demo Pengujian
+4. **Generate Application Key**
+   ```bash
+   php artisan key:generate
+   ```
 
-Aplikasi telah dilengkapi seeder akun untuk setiap peran dengan kata sandi default `password`:
+5. **Jalankan local server**
+   ```bash
+   php artisan serve
+   ```
+   Aplikasi dapat diakses melalui browser pada alamat `http://127.0.0.1:8000`.
 
-| Peran | Email | Kata Sandi | Keterangan |
-| :--- | :--- | :--- | :--- |
-| **Admin** | `admin@kampuslms.test` | `password` | Manajemen MK, Pengguna, dan Enrollment |
-| **Dosen 1** | `dosen@kampuslms.test` | `password` | Pengampu Mata Kuliah 1 (Pemrograman Web) |
-| **Dosen 2** | `budi.dosen@kampuslms.test` | `password` | Pengampu Mata Kuliah 2 (Basis Data) |
-| **Mahasiswa** | `mahasiswa@kampuslms.test` | `password` | Mahasiswa terdaftar di kelas |
+### Queue Worker dan Job Gagal
 
----
+Notifikasi tugas baru dan nilai diproses melalui queue database. Jalankan
+worker pada terminal terpisah setelah server aktif:
 
-## Panduan Instalasi Lokal
-
-Seluruh kode aplikasi berada di subdirektori `lms/`.
-
-### 1. Clone Repositori
 ```bash
-git clone https://github.com/SufSoup/kampuslms-a-kelompok-06.git
-cd kampuslms-a-kelompok-06/lms
+php artisan queue:work
 ```
 
-### 2. Instalasi Dependensi
-```bash
-# Dependensi PHP (Kompatibel PHP 8.3+)
-composer install
+Tanpa worker, job tetap berada di tabel `jobs` dan notifikasi belum terkirim.
+Untuk memantau atau mencoba kembali job gagal:
 
-# Dependensi Frontend
-npm install
-npm run build
+```bash
+php artisan queue:failed
+php artisan queue:retry all
 ```
 
-### 3. Konfigurasi Environment & Database
-```bash
-cp .env.example .env
-php artisan key:generate
-
-# Migrasi dan seeding database lengkap
-php artisan migrate:fresh --seed
-```
-
-### 4. Menjalankan Server
-```bash
-php artisan serve
-```
-Buka browser pada alamat [http://127.0.0.1:8000](http://127.0.0.1:8000).
-
----
-
-## Pengujian & Verifikasi Keamanan
-
-### 1. Automated Test Suite (Feature & Unit Tests)
-```bash
-cd lms
-php artisan test
-```
-
-### 2. Pengujian Otorisasi & Anti-IDOR Otomatis
-Jalankan server terlebih dahulu (`php artisan serve`), lalu pada terminal terpisah:
-```bash
-chmod +x scripts/test-authz.sh
-./scripts/test-authz.sh
-```
-Skrip ini menguji:
-- **RBAC:** Penolakan akses lintas peran (Dosen/Mahasiswa ke rute Admin).
-- **Anti-IDOR Antar-Objek:** Dosen A ditolak dari MK Dosen B, Mahasiswa ditolak dari MK yang tidak di-enroll, dan isolasi materi.
+Job gagal disimpan di `failed_jobs`, sedangkan batch queue menggunakan
+`job_batches`. Ketiga tabel tersebut sudah dibuat oleh migrasi queue bawaan.
