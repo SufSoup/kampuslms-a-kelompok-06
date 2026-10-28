@@ -4,7 +4,7 @@
     <p>Mata kuliah: {{ $submission->assignment->course->name }}</p>
     <p>Mahasiswa: {{ $submission->student->name }}</p>
     <p>Nama berkas: {{ $submission->original_name }}</p>
-    <p>Ukuran: {{ number_format($submission->file_size) }} byte</p>
+    <p>Ukuran: {{ $submission->formatted_file_size }}</p>
     <p>Dikumpulkan: {{ $submission->submitted_at->format('d M Y H:i') }}</p>
     <p>Status: {{ $submission->is_late ? 'Terlambat' : 'Tepat waktu' }}</p>
 

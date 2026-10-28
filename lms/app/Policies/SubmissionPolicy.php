@@ -9,11 +9,24 @@ use App\Models\User;
 class SubmissionPolicy
 {
     /**
-     * Daftar pengumpulan hanya untuk admin dan dosen.
+     * Daftar pengumpulan hanya untuk admin dan dosen pengampu.
      */
-    public function viewAny(User $user): bool
+    public function viewAny(User $user, ?Assignment $assignment = null): bool
     {
-        return in_array($user->role, ['admin', 'dosen'], true);
+        if ($user->role === 'admin') {
+            return true;
+        }
+
+        if ($user->role === 'dosen') {
+            if ($assignment === null) {
+                return true;
+            }
+
+            return $assignment->course !== null
+                && (int) $assignment->course->lecturer_id === (int) $user->id;
+        }
+
+        return false;
     }
 
     /**

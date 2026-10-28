@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\AssignmentPublished;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\AssignmentResource;
 use App\Models\Course;
@@ -11,23 +12,15 @@ use App\Models\Assignment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Gate;
 
 class AssignmentController extends Controller
 {
     public function index(Request $request, Course $course): AnonymousResourceCollection
     {
-        $user = $request->user();
+        Gate::authorize('view', $course);
 
-        if ($user->role === 'admin') {
-            // Admin boleh melihat assignment dari semua course
-        } elseif ($user->role === 'dosen') {
-            abort_unless($course->lecturer_id === $user->id, 403);
-        } elseif ($user->role === 'mahasiswa') {
-            abort_unless(
-                $course->students()->where('users.id', $user->id)->exists(),
-                403
-            );
-        }
+        $user = $request->user();
 
         $assignments = $course->assignments()
             ->with('creator')
@@ -48,10 +41,7 @@ class AssignmentController extends Controller
     {
         $course = Course::findOrFail($request->course_id);
 
-        abort_unless(
-            $course->lecturer_id === $request->user()->id,
-            403
-        );
+        Gate::authorize('create', [Assignment::class, $course]);
 
         $assignment = new Assignment([
             'title' => $request->title,
@@ -66,6 +56,10 @@ class AssignmentController extends Controller
         $assignment->status = $request->status;
         $assignment->save();
 
+        if ($assignment->status === 'published') {
+            AssignmentPublished::dispatch($assignment);
+        }
+
         $assignment->load('creator');
 
         return (new AssignmentResource($assignment))
@@ -77,13 +71,15 @@ class AssignmentController extends Controller
         UpdateAssignmentRequest $request,
         Assignment $assignment
     ): JsonResponse {
-        abort_unless(
-            (int) $assignment->course->lecturer_id === (int) $request->user()->id,
-            403
-        );
+        Gate::authorize('update', $assignment);
 
+        $wasPublished = $assignment->getOriginal('status') === 'published';
         $assignment->fill($request->validated());
         $assignment->save();
+
+        if ($assignment->status === 'published' && ! $wasPublished) {
+            AssignmentPublished::dispatch($assignment);
+        }
 
         $assignment->load('creator');
 
@@ -91,14 +87,18 @@ class AssignmentController extends Controller
             ->response()
             ->setStatusCode(200);
     }
+
     public function destroy(
         Request $request,
         Assignment $assignment
     ): JsonResponse {
-        abort_unless(
-            (int) $assignment->course->lecturer_id === (int) $request->user()->id,
-            403
-        );
+        Gate::authorize('delete', $assignment);
+
+        $assignment->submissions()->chunkById(100, static function ($submissions): void {
+            foreach ($submissions as $submission) {
+                $submission->delete();
+            }
+        });
 
         $assignment->delete();
 

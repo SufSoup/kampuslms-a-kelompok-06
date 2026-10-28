@@ -28,6 +28,10 @@ Route::get('/tentang', function () {
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+    Route::get('/forgot-password', [AuthController::class, 'showForgotPasswordForm'])->name('password.request');
+    Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->name('password.email');
+    Route::get('/reset-password/{token}', [AuthController::class, 'showResetPasswordForm'])->name('password.reset');
+    Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
 });
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
@@ -42,6 +46,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 Route::middleware('auth')->group(function () {
 
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
+    Route::get('/submissions/{submission}/download', [SubmissionController::class, 'download'])->name('submissions.download');
 
     /*
     |----------------------------------------------------------------------
@@ -86,6 +91,9 @@ Route::middleware('auth')->group(function () {
             Route::get('/courses/{course}', [CourseController::class, 'show'])
                 ->name('courses.show');
 
+            Route::get('/courses/{course}/grades', [SubmissionController::class, 'courseGrades'])
+                ->name('courses.grades.index');
+
             // CRUD assignment dan materi
             Route::scopeBindings()->group(function () {
                 Route::resource('courses.assignments', AssignmentController::class)
@@ -102,8 +110,17 @@ Route::middleware('auth')->group(function () {
             Route::get('/assignments', [AssignmentController::class, 'index'])
                 ->name('assignments.index');
 
+            Route::get('/assignments/{assignment}/submissions', [SubmissionController::class, 'index'])
+                ->name('assignments.submissions.index');
+
             Route::get('/submissions/{submission}', [SubmissionController::class, 'show'])
                 ->name('submissions.show');
+
+            Route::get('/submissions/{submission}/grade', [SubmissionController::class, 'editGrade'])
+                ->name('submissions.grade.edit');
+
+            Route::post('/submissions/{submission}/grade', [SubmissionController::class, 'storeGrade'])
+                ->name('submissions.grade.store');
         });
 
     /*
@@ -134,6 +151,12 @@ Route::middleware('auth')->group(function () {
 
             Route::get('/assignments/{assignment}', [AssignmentController::class, 'show'])
                 ->name('assignments.show');
+
+            Route::post('/assignments/{assignment}/submissions', [SubmissionController::class, 'store'])
+                ->name('assignments.submissions.store');
+
+            Route::get('/grades', [SubmissionController::class, 'studentGrades'])
+                ->name('grades.index');
         });
 
     /*

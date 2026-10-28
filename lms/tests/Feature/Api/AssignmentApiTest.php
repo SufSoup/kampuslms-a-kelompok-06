@@ -206,4 +206,59 @@ class AssignmentApiTest extends TestCase
             ->assertOk()
             ->assertJsonMissing(['id' => $draft->id]);
     }
+
+    public function test_lecturer_can_update_assignment_status_via_api(): void
+    {
+        $lecturer = User::factory()->dosen()->create();
+        $course = Course::factory()->create(['lecturer_id' => $lecturer->id]);
+        $assignment = Assignment::factory()->draft()->create([
+            'course_id' => $course->id,
+            'created_by' => $lecturer->id,
+        ]);
+
+        $this->actingAs($lecturer, 'sanctum')
+            ->patchJson("/api/v1/assignments/{$assignment->id}", [
+                'status' => 'published',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'published');
+
+        $this->assertDatabaseHas('assignments', [
+            'id' => $assignment->id,
+            'status' => 'published',
+        ]);
+    }
+
+    public function test_admin_can_create_update_and_delete_assignment(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $lecturer = User::factory()->dosen()->create();
+        $course = Course::factory()->create(['lecturer_id' => $lecturer->id]);
+
+        $response = $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/v1/assignments', [
+                'course_id' => $course->id,
+                'title' => 'Tugas oleh Admin',
+                'instructions' => 'Instruksi admin.',
+                'due_at' => now()->addDays(5)->toDateTimeString(),
+                'status' => 'published',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.title', 'Tugas oleh Admin');
+
+        $assignmentId = $response->json('data.id');
+
+        $this->actingAs($admin, 'sanctum')
+            ->patchJson("/api/v1/assignments/{$assignmentId}", [
+                'title' => 'Tugas Admin Diubah',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.title', 'Tugas Admin Diubah');
+
+        $this->actingAs($admin, 'sanctum')
+            ->deleteJson("/api/v1/assignments/{$assignmentId}")
+            ->assertNoContent();
+
+        $this->assertDatabaseMissing('assignments', ['id' => $assignmentId]);
+    }
 }

@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreCourseRequest;
 use App\Http\Requests\UpdateCourseRequest;
+use App\Models\Assignment;
 use App\Models\Course;
+use App\Models\Material;
+use App\Models\Submission;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -124,6 +127,22 @@ class CourseController extends Controller
     public function destroy(Course $course)
     {
         Gate::authorize('delete', $course);
+
+        $course->materials()->chunkById(100, static function ($materials): void {
+            $materials->each(static function (Material $material): void {
+                $material->delete();
+            });
+        });
+
+        $course->assignments()->chunkById(100, static function ($assignments): void {
+            $assignments->each(static function (Assignment $assignment): void {
+                $assignment->submissions()->chunkById(100, static function ($submissions): void {
+                    $submissions->each(static function (Submission $submission): void {
+                        $submission->delete();
+                    });
+                });
+            });
+        });
 
         $course->delete();
 
