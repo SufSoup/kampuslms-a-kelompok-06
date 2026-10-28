@@ -92,6 +92,7 @@ class AssignmentController extends Controller
         if (auth()->check() && auth()->user()->role === 'mahasiswa') {
             $submission = $assignment->submissions()
                 ->where('user_id', auth()->id())
+                ->with('grade.grader')
                 ->first();
         }
 

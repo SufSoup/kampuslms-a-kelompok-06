@@ -91,6 +91,9 @@ Route::middleware('auth')->group(function () {
             Route::get('/courses/{course}', [CourseController::class, 'show'])
                 ->name('courses.show');
 
+            Route::get('/courses/{course}/grades', [SubmissionController::class, 'courseGrades'])
+                ->name('courses.grades.index');
+
             // CRUD assignment dan materi
             Route::scopeBindings()->group(function () {
                 Route::resource('courses.assignments', AssignmentController::class)
@@ -112,6 +115,12 @@ Route::middleware('auth')->group(function () {
 
             Route::get('/submissions/{submission}', [SubmissionController::class, 'show'])
                 ->name('submissions.show');
+
+            Route::get('/submissions/{submission}/grade', [SubmissionController::class, 'editGrade'])
+                ->name('submissions.grade.edit');
+
+            Route::post('/submissions/{submission}/grade', [SubmissionController::class, 'storeGrade'])
+                ->name('submissions.grade.store');
         });
 
     /*
@@ -145,6 +154,9 @@ Route::middleware('auth')->group(function () {
 
             Route::post('/assignments/{assignment}/submissions', [SubmissionController::class, 'store'])
                 ->name('assignments.submissions.store');
+
+            Route::get('/grades', [SubmissionController::class, 'studentGrades'])
+                ->name('grades.index');
         });
 
     /*
