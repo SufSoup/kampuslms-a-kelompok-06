@@ -70,7 +70,10 @@
                             </div>
                             <div style="border-top: 1px solid #F5F5F7; padding-top: 14px; font-size: 13px; color: #8E8E93; display: flex; justify-content: space-between; align-items: center;">
                                 <span>👥 {{ $course->students_count }} Mahasiswa</span>
-                                <a href="{{ route('dosen.courses.show', $course) }}" style="color: #0071E3; font-weight: 600; border-bottom: none;">Buka Kelas →</a>
+                                <span>
+                                    <a href="{{ route('dosen.courses.show', $course) }}" style="color: #0071E3; font-weight: 600; border-bottom: none;">Buka Kelas →</a>
+                                    <a href="{{ route('dosen.courses.grades.index', $course) }}" style="color: #0071E3; font-weight: 600; border-bottom: none; margin-left: 8px;">Rekap nilai</a>
+                                </span>
                             </div>
                         </div>
                     @endforeach
@@ -115,6 +118,7 @@
         </div>
 
         <section style="margin-bottom: 32px;">
+            <p><a href="{{ route('mahasiswa.grades.index') }}">Lihat rekap nilai dan feedback saya</a></p>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                 <h3 style="font-size: 22px; font-weight: 600; margin: 0;">Tugas Aktif</h3>
                 <span style="font-size: 14px; color: #6E6E73;">Total: {{ $activeAssignmentsCount }}</span>
