@@ -46,6 +46,23 @@
                 @if ($submission->note)
                     <p><strong>Catatan:</strong> {{ $submission->note }}</p>
                 @endif
+                @if ($submission->grade)
+                    <section aria-label="Hasil penilaian" style="border-top: 1px solid #E2E8F0; margin-top: 16px; padding-top: 12px;">
+                        <h3>Hasil Penilaian</h3>
+                        <p><strong>Nilai:</strong> {{ number_format((float) $submission->grade->score, 2) }} / {{ $assignment->max_score }}</p>
+                        @if ($submission->grade->feedback)
+                            <p><strong>Feedback dosen:</strong> {{ $submission->grade->feedback }}</p>
+                        @endif
+                        @if ($submission->grade->graded_at)
+                            <p><strong>Tanggal penilaian:</strong> {{ $submission->grade->graded_at->format('d M Y H:i') }}</p>
+                        @endif
+                        @if ($submission->grade->grader)
+                            <p><strong>Dinilai oleh:</strong> {{ $submission->grade->grader->name }}</p>
+                        @endif
+                    </section>
+                @else
+                    <p><strong>Nilai:</strong> Belum dinilai.</p>
+                @endif
                 <p>
                     <a href="{{ route('submissions.download', $submission) }}" style="display: inline-block; padding: 6px 12px; background: #0284C7; color: #fff; text-decoration: none; border-radius: 6px; font-size: 14px;">
                         Unduh Berkas Saya

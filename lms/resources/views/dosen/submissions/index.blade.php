@@ -42,6 +42,9 @@
                             <td>
                                 <a href="{{ route('submissions.download', $submission) }}">Download</a>
                                 <a href="{{ route('dosen.submissions.show', $submission) }}">Detail</a>
+                                <a href="{{ route('dosen.submissions.grade.edit', $submission) }}">
+                                    {{ $submission->grade ? 'Ubah nilai' : 'Beri nilai' }}
+                                </a>
                             </td>
                         @else
                             <td>Belum mengumpulkan</td>

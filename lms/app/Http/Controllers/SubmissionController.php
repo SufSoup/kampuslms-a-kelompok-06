@@ -2,13 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\GradeGiven;
 use App\Http\Requests\StoreSubmissionRequest;
 use App\Models\Assignment;
+use App\Models\Course;
+use App\Models\Grade;
 use App\Models\Submission;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\View\View;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -97,6 +102,81 @@ class SubmissionController extends Controller
         ]);
 
         return view('submissions.show', compact('submission'));
+    }
+
+    public function editGrade(Submission $submission): View
+    {
+        $submission->load(['assignment.course', 'student', 'grade']);
+
+        if ($submission->grade) {
+            Gate::authorize('update', $submission->grade);
+        } else {
+            Gate::authorize('create', [Grade::class, $submission]);
+        }
+
+        return view('dosen.submissions.grade', compact('submission'));
+    }
+
+    public function storeGrade(Request $request, Submission $submission): RedirectResponse
+    {
+        $submission->load('assignment.course');
+
+        $grade = $submission->grade()->first();
+        if ($grade) {
+            Gate::authorize('update', $grade);
+        } else {
+            Gate::authorize('create', [Grade::class, $submission]);
+        }
+
+        $validated = $request->validate([
+            'score' => [
+                'required',
+                'numeric',
+                'decimal:0,2',
+                'min:0',
+                'max:'.$submission->assignment->max_score,
+            ],
+            'feedback' => ['nullable', 'string'],
+        ]);
+
+        $grade ??= new Grade;
+        $grade->submission()->associate($submission);
+        $grade->graded_by = $request->user()->id;
+        $grade->score = $validated['score'];
+        $grade->feedback = $validated['feedback'] ?? null;
+        $grade->graded_at = now();
+        $grade->save();
+
+        GradeGiven::dispatch($grade);
+
+        return redirect()
+            ->route('dosen.assignments.submissions.index', $submission->assignment)
+            ->with('success', 'Nilai berhasil disimpan.');
+    }
+
+    public function courseGrades(Course $course): View
+    {
+        Gate::authorize('view', $course);
+
+        $course->load('lecturer');
+        $submissions = Submission::query()
+            ->whereHas('assignment', fn ($query) => $query->where('course_id', $course->id))
+            ->with(['student', 'assignment', 'grade.grader'])
+            ->latest('submitted_at')
+            ->paginate(25);
+
+        return view('dosen.grades.index', compact('course', 'submissions'));
+    }
+
+    public function studentGrades(Request $request): View
+    {
+        $submissions = $request->user()
+            ->submissions()
+            ->with(['assignment.course', 'grade.grader'])
+            ->latest('submitted_at')
+            ->paginate(25);
+
+        return view('mahasiswa.grades.index', compact('submissions'));
     }
 
     public function download(Submission $submission): StreamedResponse
