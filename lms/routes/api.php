@@ -21,7 +21,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::get('/courses', [CourseController::class, 'index']);
     Route::get('/courses/{course}', [CourseController::class, 'show']);
     Route::get('/courses/{course}/materials', [MaterialController::class, 'index']);
-    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications', [NotificationController::class, 'index'])->middleware('web');
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
     Route::get('/courses/{course}/assignments', [AssignmentController::class, 'index']);
     Route::post('/assignments', [AssignmentController::class, 'store']);

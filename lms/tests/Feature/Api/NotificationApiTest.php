@@ -34,6 +34,7 @@ class NotificationApiTest extends TestCase
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', $userNotification->id)
             ->assertJsonPath('data.0.data.message', 'Tugas baru tersedia.')
+            ->assertJsonPath('meta.unread_count', 1)
             ->assertJsonMissing(['message' => 'Notifikasi privat pengguna lain.']);
     }
 

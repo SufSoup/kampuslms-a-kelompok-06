@@ -17,7 +17,12 @@ class NotificationController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        return NotificationResource::collection($notifications);
+        return NotificationResource::collection($notifications)
+            ->additional([
+                'meta' => [
+                    'unread_count' => $request->user()->unreadNotifications()->count(),
+                ],
+            ]);
     }
 
     public function markAsRead(Request $request, string $notification): NotificationResource
