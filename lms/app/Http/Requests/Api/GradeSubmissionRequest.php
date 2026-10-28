@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Api;
 
+use App\Models\Submission;
 use Illuminate\Foundation\Http\FormRequest;
+use LogicException;
 
 class GradeSubmissionRequest extends FormRequest
 {
@@ -13,8 +15,19 @@ class GradeSubmissionRequest extends FormRequest
 
     public function rules(): array
     {
+        $submission = $this->route('submission');
+        if (! $submission instanceof Submission) {
+            throw new LogicException('Submission route model is required for grading.');
+        }
+
         return [
-            'score' => ['required', 'numeric', 'min:0', 'max:100'],
+            'score' => [
+                'required',
+                'numeric',
+                'decimal:0,2',
+                'min:0',
+                'max:'.$submission->assignment->max_score,
+            ],
             'feedback' => ['nullable', 'string'],
         ];
     }

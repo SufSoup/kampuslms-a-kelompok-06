@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\AssignmentPublished;
 use App\Models\Assignment;
 use App\Models\Course;
+use App\Models\Submission;
 use App\Http\Requests\StoreAssignmentRequest;
 use App\Http\Requests\UpdateAssignmentRequest;
 use Illuminate\Http\Request;
@@ -71,6 +73,10 @@ class AssignmentController extends Controller
         $assignment->status = $validated['status'];
         $assignment->save();
 
+        if ($assignment->status === 'published') {
+            AssignmentPublished::dispatch($assignment);
+        }
+
         return redirect()
             ->route('dosen.assignments.show', $assignment)
             ->with('success', 'Tugas berhasil dibuat.');
@@ -82,7 +88,15 @@ class AssignmentController extends Controller
 
         $assignment->load(['course', 'creator']);
 
-        return view('assignments.show', compact('assignment'));
+        $submission = null;
+        if (auth()->check() && auth()->user()->role === 'mahasiswa') {
+            $submission = $assignment->submissions()
+                ->where('user_id', auth()->id())
+                ->with('grade.grader')
+                ->first();
+        }
+
+        return view('assignments.show', compact('assignment', 'submission'));
     }
 
     public function edit(Assignment $assignment)
@@ -108,8 +122,13 @@ class AssignmentController extends Controller
             'allow_late' => $validated['allow_late'],
         ]);
 
+        $wasPublished = $assignment->getOriginal('status') === 'published';
         $assignment->status = $validated['status'];
         $assignment->save();
+
+        if ($assignment->status === 'published' && ! $wasPublished) {
+            AssignmentPublished::dispatch($assignment);
+        }
 
         return redirect()
             ->route('dosen.assignments.show', $assignment)
@@ -119,6 +138,12 @@ class AssignmentController extends Controller
     public function destroy(Assignment $assignment)
     {
         Gate::authorize('delete', $assignment);
+
+        $assignment->submissions()->chunkById(100, static function ($submissions): void {
+            $submissions->each(static function (Submission $submission): void {
+                $submission->delete();
+            });
+        });
 
         $assignment->delete();
 

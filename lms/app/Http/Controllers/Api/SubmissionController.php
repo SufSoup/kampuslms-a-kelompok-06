@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\GradeGiven;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\SubmissionResource;
 use App\Models\Assignment;
@@ -12,6 +13,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use App\Http\Requests\Api\StoreSubmissionRequest;
 use App\Http\Requests\Api\GradeSubmissionRequest;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
 
@@ -21,10 +23,7 @@ class SubmissionController extends Controller
         Request $request,
         Assignment $assignment
     ): AnonymousResourceCollection {
-        abort_unless(
-            (int) $assignment->course->lecturer_id === (int) $request->user()->id,
-            403
-        );
+        Gate::authorize('viewAny', [Submission::class, $assignment]);
 
         $submissions = $assignment->submissions()
             ->with(['student', 'grade'])
@@ -38,15 +37,9 @@ class SubmissionController extends Controller
         StoreSubmissionRequest $request,
         Assignment $assignment
     ): JsonResponse {
-        $user = $request->user();
+        Gate::authorize('create', [Submission::class, $assignment]);
 
-        abort_unless(
-            $assignment->status === 'published'
-                && $assignment->course->students()
-                    ->where('users.id', $user->id)
-                    ->exists(),
-            403
-        );
+        $user = $request->user();
 
         if ($assignment->submissions()
             ->where('user_id', $user->id)
@@ -87,14 +80,11 @@ class SubmissionController extends Controller
         GradeSubmissionRequest $request,
         Submission $submission
     ): JsonResponse {
-        abort_unless(
-            (int) $submission->assignment->course->lecturer_id === (int) $request->user()->id,
-            403
-        );
-
         $grade = Grade::where('submission_id', $submission->id)->first();
 
         if ($grade) {
+            Gate::authorize('update', $grade);
+
             $grade->score = $request->score;
             $grade->feedback = $request->feedback;
             $grade->graded_by = $request->user()->id;
@@ -103,6 +93,8 @@ class SubmissionController extends Controller
 
             $statusCode = 200;
         } else {
+            Gate::authorize('create', [Grade::class, $submission]);
+
             $grade = new Grade();
 
             $grade->submission_id = $submission->id;
@@ -116,6 +108,8 @@ class SubmissionController extends Controller
         }
 
         $grade->load('grader');
+
+        GradeGiven::dispatch($grade);
 
         return (new \App\Http\Resources\GradeResource($grade))
             ->response()
