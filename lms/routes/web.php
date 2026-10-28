@@ -1,15 +1,16 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseEnrollmentController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\MaterialController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\AssignmentController;
-use App\Http\Controllers\SubmissionController;
 use App\Http\Controllers\LearningResourceController;
+use App\Http\Controllers\MaterialController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\SubmissionController;
+use App\Http\Controllers\UserController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -36,7 +37,6 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
-
 /*
 |--------------------------------------------------------------------------
 | Route Terproteksi (wajib login)
@@ -44,6 +44,9 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 */
 
 Route::middleware('auth')->group(function () {
+
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
 
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::get('/submissions/{submission}/download', [SubmissionController::class, 'download'])->name('submissions.download');

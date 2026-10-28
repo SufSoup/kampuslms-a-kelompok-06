@@ -59,5 +59,26 @@ php artisan queue:failed
 php artisan queue:retry all
 ```
 
+### 2. Pengujian Otorisasi & Anti-IDOR Otomatis
+Jalankan server terlebih dahulu (`php artisan serve`), lalu pada terminal terpisah:
+```bash
+chmod +x scripts/test-authz.sh
+./scripts/test-authz.sh
+```
+Skrip ini menguji:
+- **RBAC:** Penolakan akses lintas peran (Dosen/Mahasiswa ke rute Admin).
+- **Anti-IDOR Antar-Objek:** Dosen A ditolak dari MK Dosen B, Mahasiswa ditolak dari MK yang tidak di-enroll, dan isolasi materi.
+
+## Menjalankan Queue Worker
+
+Proyek menggunakan queue database: `.env.example` mengatur `QUEUE_CONNECTION=database`, dan `config/queue.php` memakai tabel `jobs` untuk koneksi tersebut. Pastikan migrasi database proyek sudah dijalankan agar tabel antrean tersedia.
+
+Saat pengembangan lokal, buka terminal terpisah dari direktori `lms/`, lalu jalankan:
+
+```bash
+php artisan queue:work
+```
+
+Worker perlu tetap berjalan selama pengembangan agar queued jobs diproses. Jika worker tidak aktif, job dapat menumpuk di tabel `jobs`; notifikasi atau pekerjaan asinkron lain mungkin belum muncul meskipun aksi web berhasil dan tidak menampilkan error. Untuk menghentikan worker dengan aman, tekan `Ctrl+C` pada terminal worker.
 Job gagal disimpan di `failed_jobs`, sedangkan batch queue menggunakan
 `job_batches`. Ketiga tabel tersebut sudah dibuat oleh migrasi queue bawaan.
