@@ -43,6 +43,12 @@ return new class extends Migration
             $table->dropIndex('assignments_status_index');
         });
 
+        if (! Schema::hasIndex('courses', ['lecturer_id'])) {
+            Schema::table('courses', function (Blueprint $table) {
+                $table->index('lecturer_id');
+            });
+        }
+
         Schema::table('courses', function (Blueprint $table) {
             $table->dropIndex(['lecturer_id', 'status']);
         });
