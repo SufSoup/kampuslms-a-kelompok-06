@@ -69,7 +69,7 @@
                                 <p style="font-size: 13px; color: #6E6E73; margin-bottom: 16px;">{{ Str::limit($course->description, 80) }}</p>
                             </div>
                             <div style="border-top: 1px solid #F5F5F7; padding-top: 14px; font-size: 13px; color: #8E8E93; display: flex; justify-content: space-between; align-items: center;">
-                                <span>👥 {{ $course->students_count }} Mahasiswa</span>
+                                <span>👥 {{ $course->students_count }} Mahasiswa · Submission belum dinilai: {{ $course->ungraded_submissions_count }}</span>
                                 <span>
                                     <a href="{{ route('dosen.courses.show', $course) }}" style="color: #0071E3; font-weight: 600; border-bottom: none;">Buka Kelas →</a>
                                     <a href="{{ route('dosen.courses.grades.index', $course) }}" style="color: #0071E3; font-weight: 600; border-bottom: none; margin-left: 8px;">Rekap nilai</a>
