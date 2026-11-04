@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasFormattedFileSize;
+use App\Support\DashboardCache;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -36,6 +37,16 @@ class Submission extends Model
 
     protected static function booted(): void
     {
+        static::saved(static function (Submission $submission): void {
+            DashboardCache::forgetAssignmentLecturer($submission->getRawOriginal('assignment_id'));
+            DashboardCache::forgetAssignmentLecturer($submission->assignment_id);
+        });
+
+        static::deleted(static function (Submission $submission): void {
+            DashboardCache::forgetAssignmentLecturer($submission->getRawOriginal('assignment_id'));
+            DashboardCache::forgetAssignmentLecturer($submission->assignment_id);
+        });
+
         static::deleting(static function (Submission $submission): void {
             if (
                 $submission->file_path

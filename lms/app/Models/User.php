@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\DashboardCache;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -13,6 +14,21 @@ use Laravel\Sanctum\HasApiTokens;
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
+
+    protected static function booted(): void
+    {
+        static::created(static function (): void {
+            DashboardCache::forgetAdminStats();
+        });
+
+        static::deleted(static function (): void {
+            DashboardCache::forgetAdminStats();
+        });
+
+        static::restored(static function (): void {
+            DashboardCache::forgetAdminStats();
+        });
+    }
 
     protected $fillable = [
         'name',
@@ -37,6 +53,7 @@ class User extends Authenticatable
     public function courses(): BelongsToMany
     {
         return $this->belongsToMany(Course::class)
+            ->using(CourseEnrollment::class)
             ->withPivot('enrolled_at')
             ->withTimestamps();
     }
