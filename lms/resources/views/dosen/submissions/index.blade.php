@@ -59,7 +59,6 @@
                 @endforeach
             </tbody>
         </table>
-        {{ $students->links() }}
     @endif
 
     <p><a href="{{ route('dosen.assignments.show', $assignment) }}">Kembali ke detail tugas</a></p>
