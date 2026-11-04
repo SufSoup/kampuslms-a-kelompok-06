@@ -33,15 +33,12 @@ class SubmissionController extends Controller
                     ->with('grade'),
             ])
             ->orderBy('users.name')
-            ->paginate(25)
-            ->withQueryString();
+            ->get();
 
-        $registeredCount = $students->total();
-        $submittedCount = Submission::query()
-            ->where('assignment_id', $assignment->id)
-            ->whereHas('student', fn ($query) => $query->where('role', 'mahasiswa'))
-            ->whereHas('student.courses', fn ($query) => $query->whereKey($assignment->course_id))
-            ->count();
+        $registeredCount = $students->count();
+        $submittedCount = $students->filter(
+            fn ($student) => $student->submissions->isNotEmpty()
+        )->count();
         $notSubmittedCount = $registeredCount - $submittedCount;
 
         return view('dosen.submissions.index', compact(
