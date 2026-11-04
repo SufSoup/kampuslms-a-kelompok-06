@@ -69,6 +69,9 @@
                     </div>
                 @endforeach
             </div>
+            <div style="margin-top: 24px;">
+                {{ $materials->links() }}
+            </div>
         @endif
     </div>
 </x-layout>
