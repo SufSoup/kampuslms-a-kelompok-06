@@ -19,7 +19,10 @@ class MaterialController extends Controller
     {
         Gate::authorize('viewAny', [Material::class, $course]);
 
-        $materials = $course->materials()->latest()->get();
+        $materials = $course->materials()
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
 
         return view('materials.index', compact('course', 'materials'));
     }
