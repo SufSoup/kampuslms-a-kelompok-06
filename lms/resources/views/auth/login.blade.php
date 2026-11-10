@@ -62,23 +62,26 @@
                 <button
                     type="button"
                     onclick="fillLogin('admin@kampuslms.test', 'password')"
-                    style="background: #FFFFFF; color: #1D1D1F; border: 1px solid #D1D1D6; text-align: left; padding: 10px 14px; border-radius: 10px; font-size: 13px; font-weight: 500;"
+                    style="background: #FFFFFF; color: #1D1D1F; border: 1px solid #D1D1D6; text-align: left; padding: 10px 14px; border-radius: 10px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px;"
                 >
-                    👑 <strong>Admin:</strong> admin@kampuslms.test (Isi otomatis)
+                    <span style="display: inline-block; padding: 2px 7px; font-size: 11px; font-weight: 700; border-radius: 4px; background: #E5E5EA; color: #1D1D1F;">ADMIN</span>
+                    <span><strong>Admin:</strong> admin@kampuslms.test (Isi otomatis)</span>
                 </button>
                 <button
                     type="button"
                     onclick="fillLogin('dosen@kampuslms.test', 'password')"
-                    style="background: #FFFFFF; color: #1D1D1F; border: 1px solid #D1D1D6; text-align: left; padding: 10px 14px; border-radius: 10px; font-size: 13px; font-weight: 500;"
+                    style="background: #FFFFFF; color: #1D1D1F; border: 1px solid #D1D1D6; text-align: left; padding: 10px 14px; border-radius: 10px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px;"
                 >
-                    👨‍🏫 <strong>Dosen:</strong> dosen@kampuslms.test (Isi otomatis)
+                    <span style="display: inline-block; padding: 2px 7px; font-size: 11px; font-weight: 700; border-radius: 4px; background: #E5E5EA; color: #1D1D1F;">DOSEN</span>
+                    <span><strong>Dosen:</strong> dosen@kampuslms.test (Isi otomatis)</span>
                 </button>
                 <button
                     type="button"
                     onclick="fillLogin('mahasiswa@kampuslms.test', 'password')"
-                    style="background: #FFFFFF; color: #1D1D1F; border: 1px solid #D1D1D6; text-align: left; padding: 10px 14px; border-radius: 10px; font-size: 13px; font-weight: 500;"
+                    style="background: #FFFFFF; color: #1D1D1F; border: 1px solid #D1D1D6; text-align: left; padding: 10px 14px; border-radius: 10px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px;"
                 >
-                    🎓 <strong>Mahasiswa:</strong> mahasiswa@kampuslms.test (Isi otomatis)
+                    <span style="display: inline-block; padding: 2px 7px; font-size: 11px; font-weight: 700; border-radius: 4px; background: #E5E5EA; color: #1D1D1F;">MHS</span>
+                    <span><strong>Mahasiswa:</strong> mahasiswa@kampuslms.test (Isi otomatis)</span>
                 </button>
             </div>
             <small style="display: block; margin-top: 10px; color: #8E8E93;">Password bawaan semua akun: <code>password</code></small>
