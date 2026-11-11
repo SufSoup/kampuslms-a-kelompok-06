@@ -27,20 +27,16 @@ RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
 # Configure PHP upload limits (modul.md §12.1: upload_max_filesize & post_max_size)
 RUN echo "upload_max_filesize = 20M\npost_max_size = 25M\nmemory_limit = 256M" > /usr/local/etc/php/conf.d/uploads.ini
 
-# Configure Apache MPM (disable event/worker, enable prefork to avoid AH00534)
-RUN a2dismod mpm_event mpm_worker || true \
-    && a2enmod mpm_prefork
-
-# Enable Apache rewrite module
-RUN a2enmod rewrite
+# Configure Apache MPM & mod_rewrite, allow .htaccess overrides
+RUN a2enmod rewrite \
+    && rm -f /etc/apache2/mods-enabled/mpm_event.* /etc/apache2/mods-enabled/mpm_worker.* \
+    && a2enmod mpm_prefork \
+    && sed -ri -e 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf
 
 # Configure Apache DocumentRoot to Laravel's public directory
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
     && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
-
-# Allow .htaccess overrides
-RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
 
 # Set working directory
 WORKDIR /var/www/html
@@ -55,7 +51,7 @@ COPY . .
 COPY --from=frontend /app/public/build ./public/build
 
 # Install PHP production dependencies without dev packages
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
 
 # Set permissions for storage and cache directories
 RUN chown -R www-data:www-data storage bootstrap/cache \
@@ -64,14 +60,5 @@ RUN chown -R www-data:www-data storage bootstrap/cache \
 # Expose HTTP and Railway default ports
 EXPOSE 80 8080
 
-# Production startup: bind dynamic $PORT, run migrations, compile cache, start Apache
-CMD sh -c "\
-    PORT=\${PORT:-8080}; \
-    sed -i \"s/Listen 80/Listen \$PORT/g\" /etc/apache2/ports.conf; \
-    sed -i \"s/<VirtualHost \*:80>/<VirtualHost *:\$PORT>/g\" /etc/apache2/sites-available/000-default.conf; \
-    php artisan migrate --force && \
-    php artisan config:cache && \
-    php artisan route:cache && \
-    php artisan view:cache && \
-    php artisan event:cache && \
-    apache2-foreground"
+# Production startup: ensure single MPM, bind dynamic $PORT, migrate, seed demo, cache warm-up, and start Apache
+CMD ["sh", "-c", "rm -f /etc/apache2/mods-enabled/mpm_event.* /etc/apache2/mods-enabled/mpm_worker.* && export PORT=\"${PORT:-8080}\" && sed -i \"s/Listen .*/Listen $PORT/\" /etc/apache2/ports.conf && sed -i \"s/<VirtualHost \\*:.*>/<VirtualHost \\*:$PORT>/\" /etc/apache2/sites-available/000-default.conf && (php artisan migrate --force || true) && (php artisan db:seed --force || true) && php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan event:cache && exec apache2-foreground"]
