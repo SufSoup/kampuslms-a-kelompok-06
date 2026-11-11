@@ -2,6 +2,12 @@
 
 Proyek ini adalah implementasi tugas Modul 1 (Mengenal Laravel 12) untuk pengembangan purwarupa Sistem Informasi Manajemen Pembelajaran (KampusLMS).
 
+## Deployment Produksi (Milestone M4 / Tugas 4)
+
+- **Aplikasi Live:** [https://kampuslms-production.up.railway.app](https://kampuslms-production.up.railway.app)
+- **Status:** Live di domain publik dengan sertifikat HTTPS aktif
+- **Dokumentasi Lengkap:** Panduan deployment dari nol, spesifikasi server, mitigasi masalah, dan kata sandi akun demo produksi dicatat di [`docs/deployment.md`](docs/deployment.md)
+
 ## Daftar Anggota
 
 | Nama Lengkap | NIM |

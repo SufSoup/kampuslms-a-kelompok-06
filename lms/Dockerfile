@@ -6,8 +6,8 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-# Stage 2: PHP Application Environment
-FROM php:8.3-apache
+# Stage 2: PHP Application Environment (PHP 8.4 per panduan asdos Railway & modul.md)
+FROM php:8.4-apache
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -60,5 +60,5 @@ RUN chown -R www-data:www-data storage bootstrap/cache \
 # Expose HTTP and Railway default ports
 EXPOSE 80 8080
 
-# Production startup: ensure single MPM, bind dynamic $PORT, migrate, seed demo, cache warm-up, and start Apache
-CMD ["sh", "-c", "rm -f /etc/apache2/mods-enabled/mpm_event.* /etc/apache2/mods-enabled/mpm_worker.* && export PORT=\"${PORT:-8080}\" && sed -i \"s/Listen .*/Listen $PORT/\" /etc/apache2/ports.conf && sed -i \"s/<VirtualHost \\*:.*>/<VirtualHost \\*:$PORT>/\" /etc/apache2/sites-available/000-default.conf && (php artisan migrate --force || true) && (php artisan db:seed --force || true) && php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan event:cache && exec apache2-foreground"]
+# Production startup: ensure single MPM, bind dynamic $PORT, clear stale cache, migrate, seed demo, cache warm-up, and start Apache
+CMD ["sh", "-c", "rm -f /etc/apache2/mods-enabled/mpm_event.* /etc/apache2/mods-enabled/mpm_worker.* && export PORT=\"${PORT:-8080}\" && sed -i \"s/Listen .*/Listen $PORT/\" /etc/apache2/ports.conf && sed -i \"s/<VirtualHost \\*:.*>/<VirtualHost \\*:$PORT>/\" /etc/apache2/sites-available/000-default.conf && php artisan config:clear && php artisan route:clear && php artisan view:clear && (php artisan migrate --force || true) && (php artisan db:seed --force || true) && php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan event:cache && exec apache2-foreground"]
