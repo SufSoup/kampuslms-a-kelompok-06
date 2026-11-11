@@ -8,7 +8,7 @@
   - Muhammad Syahid Ridho (`10241051`)
   - Muhammad Yusuf Pratama (`10241053`)
 - **Platform Produksi:** Railway Cloud Platform (Linux Container & Managed MySQL)
-- **URL Produksi:** `https://kampuslms-production.up.railway.app`
+- **URL Produksi:** `https://kampuslms-a-06-production.up.railway.app`
 
 ---
 
