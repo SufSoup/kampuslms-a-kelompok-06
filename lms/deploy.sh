@@ -23,13 +23,27 @@ echo "=== [2/8] Memperbarui Dependensi Composer ==="
 # Menginstal paket vendor tanpa paket dev dan mengoptimalkan classmap autoloader.
 # Akibat jika dihilangkan: Perubahan dependensi tidak terinstal, dan autoloader tidak teroptimasi
 # menyebabkan overhead disk I/O lambat pada setiap request PHP.
-composer install --no-dev --optimize-autoloader --no-interaction
+if command -v composer &> /dev/null; then
+    composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
+else
+    echo "[INFO] Composer tidak terdeteksi di PATH shell saat ini; melewati instalasi dependensi."
+fi
 
 echo "=== [3/8] Mengompilasi Aset Frontend (Vite) ==="
 # Mengompilasi CSS dan JS untuk produksi ke folder public/build.
 # Akibat jika dihilangkan: Perubahan tampilan atau script klien tidak terbarui di browser,
 # atau file manifest Vite hilang memicu ViteManifestNotFoundException.
-npm ci && npm run build
+# Catatan container Railway: Kompilasi Vite diproses di Docker Stage 1 (node:20-alpine).
+# Jika skrip dijalankan di dalam container runtime PHP (Stage 2), npm dilewati dengan aman
+# karena berkas public/build/manifest.json sudah siap saji.
+if command -v npm &> /dev/null; then
+    npm ci && npm run build
+elif [[ -f "public/build/manifest.json" ]]; then
+    echo "[INFO] npm tidak ada di runtime container, namun aset terkompilasi public/build/manifest.json telah tersedia dari build stage."
+else
+    echo "[ERROR] npm tidak ditemukan dan public/build/manifest.json tidak ada! Build frontend gagal."
+    exit 1
+fi
 
 echo "=== [4/8] Menjalankan Migrasi Database ==="
 # Menerapkan migrasi skema tabel baru dengan flag --force (wajib di production).
