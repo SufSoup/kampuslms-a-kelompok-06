@@ -15,61 +15,73 @@
         $destroyRoute = fn($material) => route($routePrefix . '.materials.destroy', $material);
     @endphp
 
-    <div style="max-width: 900px; margin: 0 auto;">
-        <div style="margin-bottom: 24px;">
-            <a href="{{ $backRoute }}" style="font-size: 14px; color: #6E6E73;">
-                ← Kembali ke {{ $course->name }}
-            </a>
-            <h1 style="font-size: 32px; margin-top: 12px; margin-bottom: 4px;">Daftar Materi</h1>
-            <p style="color: #6E6E73; margin-bottom: 0;">Semua materi yang tersedia pada mata kuliah ini.</p>
+    <div class="container-medium" style="margin: 0 auto;">
+        <div class="breadcrumb">
+            <a href="{{ $backRoute }}"><x-icon name="arrow-left" class="icon-sm" /> {{ $course->name }}</a>
         </div>
 
-        @can('create', [\App\Models\Material::class, $course])
-            <div style="margin-bottom: 20px;">
-                <a href="{{ $createRoute }}" style="display: inline-block; background: #000; color: #fff; padding: 10px 18px; border-radius: 999px; text-decoration: none;">+ Tambah Materi</a>
+        <div class="page-header page-header-row">
+            <div>
+                <h1 class="page-title">Daftar Materi</h1>
+                <p class="page-desc">Semua materi yang tersedia pada mata kuliah ini.</p>
             </div>
-        @endcan
+            @can('create', [\App\Models\Material::class, $course])
+                <a href="{{ $createRoute }}" class="btn btn-primary">
+                    <x-icon name="plus" class="icon-sm" /> Tambah Materi
+                </a>
+            @endcan
+        </div>
 
         @if ($materials->isEmpty())
-            <div style="padding: 32px; background: #F5F5F7; border: 1px dashed #D1D1D6; border-radius: 12px; text-align: center; color: #6E6E73;">
-                Belum ada materi yang ditambahkan pada mata kuliah ini.
+            <div class="empty-state">
+                <x-icon name="file-text" class="icon" />
+                <span>Belum ada materi yang ditambahkan pada mata kuliah ini.</span>
             </div>
         @else
-            <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div class="item-list">
                 @foreach ($materials as $material)
-                    <div style="background: #FFFFFF; border: 1px solid #E5E5EA; border-radius: 12px; padding: 20px; display: flex; justify-content: space-between; align-items: center; gap: 16px;">
-                        <div>
-                            <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; color: #8E8E93; margin-bottom: 6px;">
-                                {{ $material->type === 'file' ? 'Berkas' : 'Tautan' }}
+                    <div class="item-card">
+                        <div class="item-main">
+                            <div class="item-eyebrow">
+                                <span class="badge badge-neutral">{{ $material->type === 'file' ? 'Berkas' : 'Tautan' }}</span>
                             </div>
-                            <h3 style="font-size: 20px; margin: 0 0 6px;">{{ $material->title }}</h3>
+                            <h3 class="item-title">
+                                <a href="{{ $showRoute($material) }}">{{ $material->title }}</a>
+                            </h3>
                             @if ($material->type === 'file' && $material->original_name)
-                                <p style="margin: 0 0 6px; color: #6E6E73;">{{ $material->original_name }}</p>
+                                <div class="item-meta"><span><x-icon name="file-text" class="icon-sm" /> {{ $material->original_name }}</span></div>
                             @endif
                             @if ($material->description)
-                                <p style="margin: 0; color: #6E6E73;">{{ $material->description }}</p>
+                                <p class="item-desc">{{ $material->description }}</p>
                             @endif
                         </div>
-                        <div style="display: flex; gap: 10px; align-items: center;">
-                            <a href="{{ $showRoute($material) }}" style="color: #0071E3; font-weight: 600; text-decoration: none;">Lihat</a>
+                        <div class="item-actions">
+                            <a href="{{ $showRoute($material) }}" class="btn btn-secondary btn-sm">Lihat</a>
                             @if ($material->type === 'file' && $material->file_path)
-                                <a href="{{ $downloadRoute($material) }}" style="color: #0071E3; font-weight: 600; text-decoration: none;">Unduh</a>
+                                <a href="{{ $downloadRoute($material) }}" class="btn btn-secondary btn-sm">
+                                    <x-icon name="download" class="icon-sm" /> Unduh
+                                </a>
                             @endif
                             @can('update', $material)
-                                <a href="{{ $editRoute($material) }}" style="color: #1D1D1F; border: 1px solid #D1D1D6; padding: 6px 12px; border-radius: 999px; text-decoration: none;">Edit</a>
+                                <a href="{{ $editRoute($material) }}" class="btn btn-secondary btn-sm">
+                                    <x-icon name="edit" class="icon-sm" /> Edit
+                                </a>
                             @endcan
                             @can('delete', $material)
                                 <form method="POST" action="{{ $destroyRoute($material) }}" onsubmit="return confirm('Hapus materi ini?');">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" style="background: transparent; color: #DC2626; border: 1px solid #FCA5A5; padding: 6px 12px; border-radius: 999px; cursor: pointer;">Hapus</button>
+                                    <button type="submit" class="btn btn-danger btn-sm">
+                                        <x-icon name="trash" class="icon-sm" /> Hapus
+                                    </button>
                                 </form>
                             @endcan
                         </div>
                     </div>
                 @endforeach
             </div>
-            <div style="margin-top: 24px;">
+
+            <div class="pagination-wrapper">
                 {{ $materials->links() }}
             </div>
         @endif

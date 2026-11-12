@@ -1,90 +1,85 @@
 <x-layout title="Masuk — KampusLMS">
-    <div style="max-width: 480px; margin: 0 auto;">
-        <h1 style="font-size: 36px; margin-bottom: 8px;">Masuk</h1>
-        <p style="color: #6E6E73; margin-bottom: 32px;">Gunakan akun terdaftar untuk mengakses portal KampusLMS.</p>
+    <div class="auth-box">
+        <div class="text-center" style="margin-bottom: 24px;">
+            <h1 class="page-title">Masuk</h1>
+            <p class="page-desc">Gunakan akun terdaftar untuk mengakses portal KampusLMS.</p>
+        </div>
 
-        @if ($errors->any())
-            <div style="background: #FEE2E2; border: 1px solid #FCA5A5; color: #991B1B; padding: 12px 16px; border-radius: 12px; margin-bottom: 24px; font-size: 14px;">
-                @foreach ($errors->all() as $error)
-                    <div>{{ $error }}</div>
-                @endforeach
-            </div>
-        @endif
+        <div class="auth-card">
+            @if ($errors->any())
+                <div class="alert alert-danger" role="alert">
+                    <x-icon name="alert-circle" class="icon" />
+                    <div>
+                        @foreach ($errors->all() as $error)
+                            <div>{{ $error }}</div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
 
-        <form method="POST" action="{{ route('login.post') }}" style="max-width: 100%;">
-            @csrf
+            <form method="POST" action="{{ route('login.post') }}" class="form">
+                @csrf
 
-            <div>
-                <label for="email">Alamat Email</label>
-                <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value="{{ old('email') }}"
-                    required
-                    autofocus
-                    placeholder="nama@kampuslms.test"
-                >
-            </div>
+                <div class="field">
+                    <label for="email">Alamat Email</label>
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        class="input {{ $errors->has('email') ? 'is-invalid' : '' }}"
+                        value="{{ old('email') }}"
+                        required
+                        autofocus
+                        placeholder="nama@kampuslms.test"
+                    >
+                </div>
 
-            <div>
-                <label for="password">Kata Sandi</label>
-                <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    required
-                    placeholder="••••••••"
-                >
-            </div>
+                <div class="field">
+                    <label for="password">Kata Sandi</label>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        class="input {{ $errors->has('password') ? 'is-invalid' : '' }}"
+                        required
+                        placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;"
+                    >
+                </div>
 
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 20px; margin-bottom: 24px;">
-                <label style="display: inline-flex; align-items: center; gap: 8px; margin: 0; text-transform: none; font-size: 14px; font-weight: normal; cursor: pointer;">
-                    <input type="checkbox" name="remember" value="1" style="width: auto; margin: 0;">
-                    Ingat sesi saya
-                </label>
-                <a href="{{ route('password.request') }}" style="font-size: 14px; color: #0071E3; text-decoration: none;">
-                    Lupa kata sandi?
-                </a>
-            </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                    <label class="checkbox-row" style="margin: 0;">
+                        <input type="checkbox" name="remember" value="1">
+                        Ingat sesi saya
+                    </label>
+                    <a href="{{ route('password.request') }}" style="font-size: 14px;">
+                        Lupa kata sandi?
+                    </a>
+                </div>
 
-            <button type="submit" style="width: 100%; padding: 12px 24px; font-size: 16px;">
-                Masuk ke Akun
-            </button>
-        </form>
+                <button type="submit" class="btn btn-primary btn-block">Masuk ke Akun</button>
+            </form>
+        </div>
 
         <!-- Akun Demo untuk Kemudahan Walkthrough UTS -->
-        <div style="margin-top: 40px; padding: 20px; background: #F5F5F7; border-radius: 16px; border: 1px solid #E5E5EA;">
-            <p style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #6E6E73; margin-bottom: 12px;">
-                Akun Demo Ujian (UTS / Milestone M2)
+        <div class="card" style="margin-top: 24px;">
+            <p class="help-text" style="font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">
+                Akun Demo (UTS / Milestone M2)
             </p>
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-                <button
-                    type="button"
-                    onclick="fillLogin('admin@kampuslms.test', 'password')"
-                    style="background: #FFFFFF; color: #1D1D1F; border: 1px solid #D1D1D6; text-align: left; padding: 10px 14px; border-radius: 10px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px;"
-                >
-                    <span style="display: inline-block; padding: 2px 7px; font-size: 11px; font-weight: 700; border-radius: 4px; background: #E5E5EA; color: #1D1D1F;">ADMIN</span>
-                    <span><strong>Admin:</strong> admin@kampuslms.test (Isi otomatis)</span>
+            <div class="demo-list">
+                <button type="button" class="demo-btn" onclick="fillLogin('admin@kampuslms.test', 'password')">
+                    <x-icon name="shield" class="icon" />
+                    <span><span class="badge badge-admin">Admin</span> &mdash; admin@kampuslms.test</span>
                 </button>
-                <button
-                    type="button"
-                    onclick="fillLogin('dosen@kampuslms.test', 'password')"
-                    style="background: #FFFFFF; color: #1D1D1F; border: 1px solid #D1D1D6; text-align: left; padding: 10px 14px; border-radius: 10px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px;"
-                >
-                    <span style="display: inline-block; padding: 2px 7px; font-size: 11px; font-weight: 700; border-radius: 4px; background: #E5E5EA; color: #1D1D1F;">DOSEN</span>
-                    <span><strong>Dosen:</strong> dosen@kampuslms.test (Isi otomatis)</span>
+                <button type="button" class="demo-btn" onclick="fillLogin('dosen@kampuslms.test', 'password')">
+                    <x-icon name="users" class="icon" />
+                    <span><span class="badge badge-dosen">Dosen</span> &mdash; dosen@kampuslms.test</span>
                 </button>
-                <button
-                    type="button"
-                    onclick="fillLogin('mahasiswa@kampuslms.test', 'password')"
-                    style="background: #FFFFFF; color: #1D1D1F; border: 1px solid #D1D1D6; text-align: left; padding: 10px 14px; border-radius: 10px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px;"
-                >
-                    <span style="display: inline-block; padding: 2px 7px; font-size: 11px; font-weight: 700; border-radius: 4px; background: #E5E5EA; color: #1D1D1F;">MHS</span>
-                    <span><strong>Mahasiswa:</strong> mahasiswa@kampuslms.test (Isi otomatis)</span>
+                <button type="button" class="demo-btn" onclick="fillLogin('mahasiswa@kampuslms.test', 'password')">
+                    <x-icon name="graduation" class="icon" />
+                    <span><span class="badge badge-mahasiswa">Mahasiswa</span> &mdash; mahasiswa@kampuslms.test</span>
                 </button>
             </div>
-            <small style="display: block; margin-top: 10px; color: #8E8E93;">Password bawaan semua akun: <code>password</code></small>
+            <p class="help-text" style="margin-top: 10px;">Klik untuk isi otomatis. Password bawaan semua akun: <code>password</code></p>
         </div>
     </div>
 
