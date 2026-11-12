@@ -53,7 +53,7 @@ composer install
 npm run build
 php artisan test
 ```
-*Verifikasi:* Seluruh 193 unit & feature test harus berstatus `PASS` (780 assertions).
+*Verifikasi:* Seluruh 195 unit & feature test harus berstatus `PASS` (784 assertions).
 
 ### Langkah 2: Provisioning Project & Managed MySQL di Railway
 1. Buka dashboard [Railway.app](https://railway.app).
@@ -164,7 +164,7 @@ Untuk menguji pemrosesan job di server:
    railway run php artisan db:seed --force
    ```
 
-*Verifikasi:* Seluruh 14 tabel (termasuk `learning_resources` dan `learning_resource_reads`) terbuat di database dan akun demo siap digunakan.
+*Verifikasi:* Seluruh tabel (termasuk `learning_resources` dan `learning_resource_reads`) terbuat di database dan akun demo siap digunakan.
 
 ### Langkah 8: Networking & Public Domain
 1. Buka service `kampuslms-web` > tab **Networking**.
@@ -247,10 +247,10 @@ php artisan queue:restart
 - **Konsekuensi jika dihilangkan:** *(KRITIS)* Worker yang berjalan adalah long-lived PHP process di memori RAM. Tanpa perintah restart ini, worker akan terus memproses job baru menggunakan logika kode lama yang tercache di RAM sebelum deploy dilakukan.
 
 ```bash
-curl -fsS "${APP_URL%/}/up" > /dev/null || { echo "[ERROR] Smoke test gagal!"; exit 1; }
 php artisan up
+curl -fsS "${APP_URL%/}/up" > /dev/null || { echo "[ERROR] Smoke test gagal!"; exit 1; }
 ```
-- **Konsekuensi jika dihilangkan:** Aplikasi bisa dibuka kembali dari mode maintenance padahal aplikasinya sedang rusak, menampilkan error layar putih kepada seluruh pengguna.
+- **Konsekuensi jika dihilangkan:** Aplikasi dibuka kembali dari mode maintenance, lalu health check memastikan `/up` merespons HTTP 200. Jika health check gagal, skrip keluar dengan status non-zero agar deployment ditandai gagal dan tidak dianggap sukses.
 
 ---
 
@@ -572,7 +572,7 @@ Sebagai bahan persiapan interview Tugas 4 (*"Tunjukkan satu bagian yang Anda tul
      - Memperbaiki urutan `AllowOverride All` agar dieksekusi secara global sebelum perubahan DocumentRoot sehingga berkas `.htaccess` Laravel tidak diabaikan.
    - **Pada `deploy.sh`:**
      - Menambahkan handler trap kegagalan (`trap 'php artisan up || true' ERR`) agar aplikasi tidak terjebak dalam mode maintenance jika migrasi atau build gagal di tengah eksekusi.
-     - Menambahkan health check `/up` sebelum aplikasi dibuka kembali untuk umum.
+     - Menambahkan health check `/up` setelah aplikasi dibuka kembali untuk umum, dengan exit non-zero jika endpoint tidak merespons HTTP 200.
 3. **Alasan Perubahan:**
    - Kode AI generik biasanya mengasumsikan server VPS monolitik dengan port statis dan image Ubuntu standar. Platform cloud modern seperti Railway memiliki lifecycle dinamis (ephemeral container, dynamic port binding, managed reverse proxy) yang menuntut modifikasi manual agar zero-downtime dan anti-crash.
 
