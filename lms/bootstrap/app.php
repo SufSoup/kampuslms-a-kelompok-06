@@ -13,6 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
         apiPrefix: 'api/v1',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Trust semua proxy (Railway/Docker) agar header X-Forwarded-*
+        // dipakai untuk generate URL asset yang benar
+        $middleware->trustProxies(at: '*');
+
         // Pendaftaran alias middleware (Laravel 12 — bukan Kernel.php)
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureUserHasRole::class,
