@@ -75,17 +75,18 @@ echo "=== [6/8] Me-restart Background Queue Worker ==="
 # menyebabkan bug notifikasi/grading yang sudah diperbaiki tetap berjalan versi lamanya.
 php artisan queue:restart
 
-echo "=== [7/8] Smoke Test Health Check ==="
-# Memverifikasi endpoint /up merespons dengan HTTP 200 sebelum aplikasi dibuka ke publik.
-# Akibat jika dihilangkan: Aplikasi keluar dari maintenance mode dalam kondisi rusak tanpa terdeteksi.
+echo "=== [7/8] Menonaktifkan Mode Maintenance ==="
+# Membuka kembali akses aplikasi untuk seluruh pengguna.
+# Akibat jika dihilangkan: Aplikasi selamanya berada di mode maintenance (503 Service Unavailable).
+php artisan up
+
+echo "=== [8/8] Smoke Test Health Check ==="
+# Memverifikasi endpoint /up merespons dengan HTTP 200 setelah aplikasi dibuka.
+# Akibat jika dihilangkan: Deployment dinyatakan sukses padahal aplikasi masih rusak;
+# kegagalan baru terdeteksi oleh pengguna pertama yang membuka aplikasi.
 curl -fsS "${APP_URL%/}/up" > /dev/null || {
     echo "[ERROR] Smoke test endpoint /up gagal! Periksa storage/logs/laravel.log"
     exit 1
 }
-
-echo "=== [8/8] Menonaktifkan Mode Maintenance ==="
-# Membuka kembali akses aplikasi untuk seluruh pengguna.
-# Akibat jika dihilangkan: Aplikasi selamanya berada di mode maintenance (503 Service Unavailable).
-php artisan up
 
 echo "[SUKSES] Deployment ulang selesai dan terverifikasi sehat di $APP_URL"
