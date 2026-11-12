@@ -1,38 +1,46 @@
-<x-layout title="{{ $course->name }}">
-    <div style="margin-bottom: 24px;">
-        @php
-            $backRoute = match(auth()->user()->role) {
-                'admin' => route('admin.courses.index'),
-                'dosen' => route('dosen.courses.index'),
-                'mahasiswa' => route('mahasiswa.courses.index'),
-                default => url('/'),
-            };
-        @endphp
-        <a href="{{ $backRoute }}" style="font-size: 14px; color: #6E6E73; border-bottom: none;">
-            ← Kembali ke Daftar Mata Kuliah
-        </a>
+<x-layout title="{{ $course->name }} — KampusLMS">
+    @php
+        $backRoute = match(auth()->user()->role) {
+            'admin' => route('admin.courses.index'),
+            'dosen' => route('dosen.courses.index'),
+            'mahasiswa' => route('mahasiswa.courses.index'),
+            default => url('/'),
+        };
+    @endphp
+
+    <div class="breadcrumb">
+        <a href="{{ $backRoute }}"><x-icon name="arrow-left" class="icon-sm" /> Daftar Mata Kuliah</a>
+        <x-icon name="chevron-right" class="icon-sm" />
+        <span>{{ $course->code }}</span>
     </div>
 
-    <div style="background: #F5F5F7; border-radius: 16px; padding: 28px; margin-bottom: 36px; border: 1px solid #E5E5EA;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-            <div>
-                <span style="font-size: 12px; font-weight: 700; color: #0071E3; background: #EBF5FF; padding: 4px 10px; border-radius: 6px;">
-                    {{ $course->code }}
-                </span>
-                <span style="font-size: 13px; color: #8E8E93; margin-left: 10px;">{{ $course->sks }} SKS</span>
+    <div class="profile-card">
+        <div class="profile-top">
+            <div class="profile-chips">
+                <span class="chip">{{ $course->code }}</span>
+                <span class="badge badge-neutral">{{ $course->sks }} SKS</span>
             </div>
-            <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; padding: 4px 10px; border-radius: 6px; background: #E5E5EA;">
+            <span class="badge badge-{{ $course->status === 'active' ? 'success' : ($course->status === 'draft' ? 'warning' : 'neutral') }}">
                 Status: {{ ucfirst($course->status) }}
             </span>
         </div>
 
-        <h1 style="font-size: 32px; margin-bottom: 12px;">{{ $course->name }}</h1>
-        <p style="color: #3A3A3C; font-size: 15px; margin-bottom: 16px;">{{ $course->description }}</p>
+        <h1 class="profile-title">{{ $course->name }}</h1>
+        <p class="profile-desc">{{ $course->description }}</p>
 
-        <div style="font-size: 14px; color: #6E6E73; border-top: 1px solid #E5E5EA; padding-top: 14px;">
-            👨‍🏫 <strong>Dosen Pengampu:</strong> {{ $course->lecturer?->name ?? 'Belum ditentukan' }}
-            @if ($course->lecturer?->email)
-                ({{ $course->lecturer->email }})
+        <div class="profile-meta">
+            <span>
+                <x-icon name="user" class="icon-sm" />
+                <strong>Dosen Pengampu:</strong> {{ $course->lecturer?->name ?? 'Belum ditentukan' }}
+                @if ($course->lecturer?->email)
+                    ({{ $course->lecturer->email }})
+                @endif
+            </span>
+            @if (auth()->user()->role === 'dosen' && $course->lecturer_id === auth()->id())
+                <span>
+                    <x-icon name="award" class="icon-sm" />
+                    <a href="{{ route('dosen.courses.grades.index', $course) }}">Rekap nilai</a>
+                </span>
             @endif
         </div>
     </div>
@@ -45,19 +53,19 @@
                 'mahasiswa' => 'mahasiswa',
             };
         @endphp
-        <section style="margin-bottom: 36px; padding: 24px; border: 1px solid #E5E5EA; border-radius: 16px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px;">
+        <section class="section">
+            <div class="section-header">
                 <div>
-                    <h2 style="font-size: 22px; margin: 0 0 6px;">Materi Perkuliahan</h2>
-                    <p style="color: #6E6E73; margin: 0;">{{ $course->materials->count() }} materi tersedia untuk mata kuliah ini.</p>
+                    <h2 class="section-title">Materi Perkuliahan</h2>
+                    <p class="section-desc">{{ $course->materials->count() }} materi tersedia untuk mata kuliah ini.</p>
                 </div>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <a href="{{ route($courseRoutePrefix . '.courses.materials.index', $course) }}" style="color: #0071E3; text-decoration: none;">
+                <div class="item-actions">
+                    <a href="{{ route($courseRoutePrefix . '.courses.materials.index', $course) }}" class="btn btn-secondary btn-sm">
                         Lihat Materi
                     </a>
                     @can('create', [\App\Models\Material::class, $course])
-                        <a href="{{ route($courseRoutePrefix . '.courses.materials.create', $course) }}" style="background: #000; color: #fff; padding: 9px 16px; border-radius: 999px; text-decoration: none;">
-                            + Tambah Materi
+                        <a href="{{ route($courseRoutePrefix . '.courses.materials.create', $course) }}" class="btn btn-primary btn-sm">
+                            <x-icon name="plus" class="icon-sm" /> Tambah Materi
                         </a>
                     @endcan
                 </div>
@@ -68,81 +76,74 @@
     <!-- ================================================================= -->
     <!-- FITUR 17: KURASI SUMBER BELAJAR TAMBAHAN & PENANDA BACA          -->
     <!-- ================================================================= -->
-    <div style="margin-top: 40px; border-top: 2px solid #F5F5F7; padding-top: 32px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <section class="section">
+        <div class="section-header">
             <div>
-                <h2 style="font-size: 22px; font-weight: 600; margin: 0;">
-                    📖 Sumber Belajar Tambahan
-                    <span style="font-size: 12px; font-weight: 600; color: #7952B3; background: #F3E8FF; padding: 3px 8px; border-radius: 6px; vertical-align: middle; margin-left: 6px;">
-                        Fitur 17 Kelompok 06
-                    </span>
+                <h2 class="section-title">
+                    Sumber Belajar Tambahan
+                    <span class="badge badge-purple">Fitur 17 Kelompok 06</span>
                 </h2>
-                <p style="font-size: 14px; color: #6E6E73; margin-top: 4px; margin-bottom: 0;">
+                <p class="section-desc">
                     Kurasi referensi tambahan (artikel, video, dokumentasi) yang disediakan pengampu.
                 </p>
             </div>
 
             @if (auth()->user()->role === 'admin' || (auth()->user()->role === 'dosen' && $course->lecturer_id === auth()->id()))
-                <a href="{{ route('learning-resources.create', $course) }}" style="background: #000000; color: #FFFFFF; padding: 8px 18px; border-radius: 980px; font-size: 13px; font-weight: 500; text-decoration: none; border-bottom: none;">
-                    + Tambah Sumber Belajar
+                <a href="{{ route('learning-resources.create', $course) }}" class="btn btn-primary btn-sm">
+                    <x-icon name="plus" class="icon-sm" /> Tambah Sumber Belajar
                 </a>
             @endif
         </div>
 
         @if ($course->learningResources->isEmpty())
-            <div style="padding: 28px; background: #FAFAFA; border: 1px dashed #D1D1D6; border-radius: 12px; text-align: center;">
-                <p style="color: #8E8E93; margin: 0; font-size: 14px;">
-                    Belum ada sumber belajar tambahan yang dikurasi untuk mata kuliah ini.
-                </p>
+            <div class="empty-state">
+                <x-icon name="link" class="icon" />
+                <span>Belum ada sumber belajar tambahan yang dikurasi untuk mata kuliah ini.</span>
             </div>
         @else
-            <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div class="item-list">
                 @foreach ($course->learningResources as $resource)
                     @php
                         $isRead = $resource->readers->contains(auth()->id());
                     @endphp
-                    <div style="background: #FFFFFF; border: 1px solid #E5E5EA; border-radius: 12px; padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; gap: 16px;">
-                        <div style="flex: 1;">
-                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-                                <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; background: #F2F2F7; color: #1D1D1F;">
-                                    {{ ucfirst($resource->type) }}
-                                </span>
+                    <div class="item-card">
+                        <div class="item-main">
+                            <div class="item-eyebrow">
+                                <span class="badge badge-neutral">{{ ucfirst($resource->type) }}</span>
                                 @if ($resource->source_platform)
-                                    <span style="font-size: 12px; color: #8E8E93;">• {{ $resource->source_platform }}</span>
+                                    <span style="text-transform: none;">{{ $resource->source_platform }}</span>
                                 @endif
                                 @if ($resource->is_recommended)
-                                    <span style="font-size: 11px; font-weight: 600; color: #D97706; background: #FEF3C7; padding: 2px 7px; border-radius: 4px;">
-                                        ⭐ Direkomendasikan
-                                    </span>
+                                    <span class="badge badge-warning"><x-icon name="star" class="icon-sm" /> Direkomendasikan</span>
                                 @endif
                             </div>
 
-                            <h3 style="font-size: 16px; font-weight: 600; margin: 0 0 4px 0;">
-                                <a href="{{ $resource->url }}" target="_blank" rel="noopener noreferrer" style="color: #0071E3; text-decoration: none; border-bottom: 1px solid #0071E3;">
-                                    {{ $resource->title }} ↗
+                            <h3 class="item-title">
+                                <a href="{{ $resource->url }}" target="_blank" rel="noopener noreferrer">
+                                    {{ $resource->title }} <x-icon name="external" class="icon-sm" />
                                 </a>
                             </h3>
 
                             @if ($resource->description)
-                                <p style="font-size: 13px; color: #6E6E73; margin: 4px 0 0 0;">{{ $resource->description }}</p>
+                                <p class="item-desc">{{ $resource->description }}</p>
                             @endif
 
-                            <div style="font-size: 12px; color: #8E8E93; margin-top: 6px;">
-                                👥 {{ $resource->readers->count() }} mahasiswa telah menandai sudah membaca
+                            <div class="item-meta">
+                                <span><x-icon name="check-circle" class="icon-sm" /> {{ $resource->readers->count() }} mahasiswa telah menandai sudah membaca</span>
                             </div>
                         </div>
 
-                        <div style="display: flex; align-items: center; gap: 10px;">
+                        <div class="item-actions">
                             @if (auth()->user()->role === 'mahasiswa')
                                 <!-- Form Penanda Baca Mahasiswa (Anti-IDOR) -->
                                 <form method="POST" action="{{ route('learning-resources.toggle-read', $resource) }}" style="margin: 0;">
                                     @csrf
                                     @if ($isRead)
-                                        <button type="submit" style="background: #E8F8EE; color: #166534; border: 1px solid #86EFAC; padding: 6px 14px; font-size: 13px; font-weight: 600; border-radius: 980px;">
-                                            ✓ Sudah Dibaca
+                                        <button type="submit" class="btn btn-secondary btn-sm">
+                                            <x-icon name="check" class="icon-sm" /> Sudah Dibaca
                                         </button>
                                     @else
-                                        <button type="submit" style="background: #F5F5F7; color: #1D1D1F; border: 1px solid #D1D1D6; padding: 6px 14px; font-size: 13px; font-weight: 500; border-radius: 980px;">
+                                        <button type="submit" class="btn btn-secondary btn-sm">
                                             Tandai Selesai Baca
                                         </button>
                                     @endif
@@ -150,14 +151,14 @@
                             @endif
 
                             @if (auth()->user()->role === 'admin' || (auth()->user()->role === 'dosen' && $course->lecturer_id === auth()->id()))
-                                <a href="{{ route('learning-resources.edit', [$course, $resource]) }}" style="font-size: 13px; color: #0071E3; padding: 6px 12px; border: 1px solid #D1D1D6; border-radius: 980px; text-decoration: none;">
-                                    Edit
+                                <a href="{{ route('learning-resources.edit', [$course, $resource]) }}" class="btn btn-secondary btn-sm">
+                                    <x-icon name="edit" class="icon-sm" /> Edit
                                 </a>
                                 <form method="POST" action="{{ route('learning-resources.destroy', [$course, $resource]) }}" style="margin: 0;" onsubmit="return confirm('Hapus sumber belajar ini?');">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" style="background: transparent; color: #DC2626; border: 1px solid #FCA5A5; padding: 6px 12px; font-size: 13px; border-radius: 980px;">
-                                        Hapus
+                                    <button type="submit" class="btn btn-danger btn-sm">
+                                        <x-icon name="trash" class="icon-sm" /> Hapus
                                     </button>
                                 </form>
                             @endif
@@ -166,62 +167,89 @@
                 @endforeach
             </div>
         @endif
-    </div>
+    </section>
+
     @if (auth()->user()->role === 'admin')
-        <section>
-            <h2>Mahasiswa Terdaftar</h2>
+        <section class="section">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">Mahasiswa Terdaftar</h2>
+                    <p class="section-desc">{{ $course->students->count() }} mahasiswa terdaftar pada mata kuliah ini.</p>
+                </div>
+            </div>
 
             @if ($course->students->isEmpty())
-                <p>Belum ada mahasiswa yang terdaftar.</p>
+                <div class="empty-state">
+                    <x-icon name="users" class="icon" />
+                    <span>Belum ada mahasiswa yang terdaftar.</span>
+                </div>
             @else
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Nama</th>
-                            <th>Email</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($course->students as $student)
-                            <tr>
-                                <td>{{ $student->name }}</td>
-                                <td>{{ $student->email }}</td>
-                                <td>
-                                    <form method="POST" action="{{ route('admin.courses.enrollments.destroy', [$course, $student]) }}">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit">Hapus Pendaftaran</button>
-                                    </form>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                <div class="table-card">
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Nama</th>
+                                    <th>Email</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($course->students as $student)
+                                    <tr>
+                                        <td class="cell-strong">{{ $student->name }}</td>
+                                        <td class="cell-muted">{{ $student->email }}</td>
+                                        <td>
+                                            <form method="POST" action="{{ route('admin.courses.enrollments.destroy', [$course, $student]) }}">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-danger btn-sm">
+                                                    <x-icon name="trash" class="icon-sm" /> Hapus Pendaftaran
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             @endif
 
             @if ($availableStudents->isNotEmpty())
-                <form method="POST" action="{{ route('admin.courses.enrollments.store', $course) }}">
-                    @csrf
-                    <label for="student_id">Daftarkan mahasiswa</label>
-                    <select id="student_id" name="student_id" required>
-                        <option value="">Pilih mahasiswa</option>
-                        @foreach ($availableStudents as $student)
-                            <option value="{{ $student->id }}" @selected(old('student_id') == $student->id)>
-                                {{ $student->name }} ({{ $student->email }})
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('student_id')
-                        <p role="alert">{{ $message }}</p>
-                    @enderror
-                    <button type="submit">Daftarkan</button>
-                </form>
+                <div class="card" style="margin-top: 20px;">
+                    <form method="POST" action="{{ route('admin.courses.enrollments.store', $course) }}" class="form">
+                        @csrf
+                        <div class="field">
+                            <label for="student_id">Daftarkan mahasiswa</label>
+                            <select id="student_id" name="student_id" class="input {{ $errors->has('student_id') ? 'is-invalid' : '' }}" required>
+                                <option value="">Pilih mahasiswa</option>
+                                @foreach ($availableStudents as $student)
+                                    <option value="{{ $student->id }}" @selected(old('student_id') == $student->id)>
+                                        {{ $student->name }} ({{ $student->email }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('student_id')
+                                <p class="field-error" role="alert">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <x-icon name="plus" class="icon-sm" /> Daftarkan
+                            </button>
+                        </div>
+                    </form>
+                </div>
             @endif
         </section>
     @endif
 
     @can('update', $course)
-        <a href="{{ route('admin.courses.edit', $course) }}">Edit</a>
+        <div class="form-actions">
+            <a href="{{ route('admin.courses.edit', $course) }}" class="btn btn-secondary">
+                <x-icon name="edit" class="icon-sm" /> Edit Mata Kuliah
+            </a>
+        </div>
     @endcan
 </x-layout>
