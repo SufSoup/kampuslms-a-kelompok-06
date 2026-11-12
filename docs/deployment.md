@@ -80,7 +80,6 @@ Buka tab **Variables** pada service `kampuslms-web` dan buka **Raw Editor**. Tem
 ```dotenv
 APP_NAME=KampusLMS
 APP_ENV=production
-APP_KEY=base64:dkW7OW8BI8WEcDgvCy8iozOMvjPCzA3ho5Tl1JZG5LI=
 APP_DEBUG=false
 APP_URL=https://${{RAILWAY_PUBLIC_DOMAIN}}
 
@@ -110,7 +109,11 @@ SESSION_DOMAIN=null
 SESSION_SECURE_COOKIE=true
 ```
 
-*Verifikasi:* Pastikan `APP_DEBUG=false`, `APP_ENV=production`, dan `SESSION_SECURE_COOKIE=true`.
+Generate `APP_KEY` khusus produksi dengan `cd lms && php artisan key:generate --show`, lalu masukkan hasilnya langsung ke Railway Variables. Jangan menaruh nilainya di dokumen atau commit. Jika key yang pernah tercantum di versi sebelumnya sudah digunakan di produksi, rotasi key Railway.
+
+Sebelum seeding pertama, atur `DEMO_ADMIN_PASSWORD`, `DEMO_LECTURER_PASSWORD`, `DEMO_LECTURER_2_PASSWORD`, `DEMO_STUDENT_PASSWORD`, dan `DEMO_IDOR_STUDENT_PASSWORD` di Railway Variables. Nilai admin, dosen demo, dan mahasiswa demo harus sama dengan kredensial pada §6.4; gunakan password privat tersendiri untuk dosen kedua dan akun IDOR. Seeder produksi akan berhenti dengan error jika password yang dibutuhkan belum dikonfigurasi. Jangan gunakan password lokal dari `.env.example` di Railway.
+
+*Verifikasi:* Pastikan `APP_DEBUG=false`, `APP_ENV=production`, `SESSION_SECURE_COOKIE=true`, dan semua variabel password demo telah diisi sebelum seeding.
 
 ### Langkah 5: Persistent Storage Volume
 1. Buka service `kampuslms-web` > tab **Volumes**.
@@ -118,7 +121,13 @@ SESSION_SECURE_COOKIE=true
 3. Atur Mount Path: `/var/www/html/storage/app/private`.
 4. Simpan konfigurasi.
 
-*Verifikasi:* Volume tertera dengan status mounted ke direktori storage privat.
+*Verifikasi Konfigurasi & Uji Persistensi:*
+- **Cek Mount Path:** Buka tab Volumes, pastikan volume persistent tertera aktif ter-mount ke `/var/www/html/storage/app/private`.
+- **Prosedur Uji Persistensi (Anti-Data Loss saat Redeploy):**
+  1. Login sebagai mahasiswa di antarmuka web, unggah berkas tugas submission (PDF).
+  2. Buka akun dosen, verifikasi berkas tugas dapat diunduh secara normal.
+  3. Lakukan redeploy service `kampuslms-web` di Railway (Command Palette: `Redeploy`).
+  4. Setelah container baru aktif, buka kembali tautan unduhan tugas dari akun dosen. Berkas wajib tetap berhasil diunduh (HTTP 200) tanpa error `FileNotFoundException`. Hal ini membuktikan data di `/storage/app/private` bertahan melampaui siklus hidup ephemeral container.
 
 ### Langkah 6: Provisioning Dedicated Background Queue Worker
 1. Di dalam project yang sama, klik **+ Create** > **GitHub Repo** (gunakan repo yang sama).
@@ -131,27 +140,31 @@ SESSION_SECURE_COOKIE=true
      ```
 4. Buka tab **Variables**, klik **Add Reference** atau samakan seluruh variabel dengan service `kampuslms-web` (termasuk referensi DB dan `APP_KEY`).
 
-*Verifikasi:* Tab **Deploy Logs** pada service worker menunjukkan status pemrosesan aktif (Deliverable BUILD #4):
+*Verifikasi:* Buka tab **Deploy Logs** pada service worker. Verifikasi bahwa worker aktif mendengarkan antrean dengan format:
 ```text
-2026-11-11 08:20:01 [INFO] Processing jobs from the [default] queue.
-2026-11-11 08:22:14 [INFO] Running: App\Jobs\SendAssignmentPublishedNotification (ID: 104)
-2026-11-11 08:22:15 [INFO] Processed: App\Jobs\SendAssignmentPublishedNotification (ID: 104) [124.32ms]
-2026-11-11 08:25:40 [INFO] Running: App\Jobs\SendSubmissionGradedNotification (ID: 105)
-2026-11-11 08:25:40 [INFO] Processed: App\Jobs\SendSubmissionGradedNotification (ID: 105) [98.15ms]
+[INFO] Processing jobs from the [default] queue.
 ```
+Untuk menguji pemrosesan job di server:
+1. Terbitkan tugas berstatus `published` dari akun dosen di antarmuka web.
+2. Pantau log worker untuk mencatat eksekusi `App\Jobs\SendAssignmentPublishedNotification`.
+3. Verifikasi baris berkurang dari tabel `jobs` dan notifikasi bertambah di akun mahasiswa.
 
 ### Langkah 7: Migrasi Basis Data & Seeding Awal
-Saat web container pertama kali booting, script startup pada `Dockerfile` otomatis menjalankan migrasi aman:
-```bash
-php artisan migrate --force
-php artisan db:seed --force
-```
-Jika ingin mengeksekusi manual melalui Railway CLI:
-```bash
-railway run php artisan migrate --force
-railway run php artisan db:seed --force
-```
-*Verifikasi:* Seluruh 14 tabel (termasuk `learning_resources` dan `learning_resource_reads`) terbuat di database.
+1. **Migrasi Otomatis (Saat Booting Container):**
+   Script startup pada `Dockerfile` secara otomatis mengeksekusi:
+   ```bash
+   php artisan migrate --force
+   ```
+   *Catatan penting:* Perintah ini sengaja tidak menggunakan toleransi `|| true`. Jika migrasi gagal, container akan berhenti (*exit non-zero*) agar Railway menandai status deploy gagal dan mencegah aplikasi berjalan dengan skema database yang korup.
+
+2. **Seeding Akun Demo (Manual Satu Kali Saja):**
+   Sesuai `modul.md` (baris 4247), `db:seed` **dilarang keras** diletakkan di startup CMD container agar tidak menimpa data persisten atau memicu error `Duplicate entry` saat container restart/redeploy.
+   Eksekusi seeding secara manual satu kali saja setelah database terbuat via Railway CLI atau tab Shell:
+   ```bash
+   railway run php artisan db:seed --force
+   ```
+
+*Verifikasi:* Seluruh 14 tabel (termasuk `learning_resources` dan `learning_resource_reads`) terbuat di database dan akun demo siap digunakan.
 
 ### Langkah 8: Networking & Public Domain
 1. Buka service `kampuslms-web` > tab **Networking**.
@@ -207,9 +220,13 @@ composer install --no-dev --optimize-autoloader --no-interaction
 - **Konsekuensi jika dihilangkan:** Paket development seperti PHPUnit, Mockery, dan Laravel Debugbar akan ikut terpasang di produksi. Hal ini memperbesar ukuran container, memperlambat class autoloading, dan membuka celah keamanan.
 
 ```bash
-npm ci && npm run build
+if command -v npm &> /dev/null; then
+    npm ci && npm run build
+elif [[ -f "public/build/manifest.json" ]]; then
+    echo "[INFO] npm tidak ada di runtime container, namun aset terkompilasi telah tersedia."
+fi
 ```
-- **Konsekuensi jika dihilangkan:** Tampilan antarmuka kehilangan file CSS Tailwind dan JavaScript termutakhir, menyebabkan halaman web tampil hancur tanpa styling (*unformatted layout*).
+- **Konsekuensi jika dihilangkan:** Tampilan antarmuka kehilangan file CSS Tailwind dan JavaScript termutakhir, menyebabkan halaman web tampil hancur tanpa styling (*unformatted layout*). Pada Railway container, kompilasi aset ditangani di Docker Stage 1 (`node:20-alpine`) sebelum disalin ke image Apache, sehingga skrip secara adaptif memverifikasi ketersediaan `public/build/manifest.json` agar tidak crash saat runtime PHP tidak memiliki binary npm.
 
 ```bash
 php artisan migrate --force
@@ -323,7 +340,7 @@ Berikut adalah 5 masalah teknis nyata yang dihadapi tim selama proses penyusunan
 - **Gejala:** Container deployment di Railway gagal menyala dan masuk ke siklus crash (*restarting loop*). Log container mencatat:
   `[core:emerg] [pid 1] AH00534: Configuration Error: More than one MPM loaded.`
 - **Akar Masalah:**
-  Pada image dasar `php:8.3-apache` berbasis Debian Bookworm, modul multi-processing `mpm_event` aktif secara default. Ketika baris `RUN a2enmod mpm_prefork` dijalankan, Debian menyisakan link konfigurasi untuk kedua MPM secara simultan. Apache menolak menyala jika terdapat lebih dari satu modul MPM yang termuat.
+  Pada image dasar `php:8.4-apache` berbasis Debian Bookworm, modul multi-processing `mpm_event` aktif secara default. Ketika baris `RUN a2enmod mpm_prefork` dijalankan, Debian menyisakan link konfigurasi untuk kedua MPM secara simultan. Apache menolak menyala jika terdapat lebih dari satu modul MPM yang termuat.
 - **Solusi:**
   Membersihkan seluruh symlink MPM event dan worker sebelum mengaktifkan `mpm_prefork` di Dockerfile dan script entrypoint CMD:
   ```dockerfile
@@ -338,13 +355,13 @@ Berikut adalah 5 masalah teknis nyata yang dihadapi tim selama proses penyusunan
 - **Solusi:**
   Membuat **Railway Persistent Volume** dan me-mount volume tersebut ke direktori absolut `/var/www/html/storage/app/private`. Data submission mahasiswa kini tersimpan di block storage persisten yang independen dari siklus hidup container aplikasi.
 
-### Masalah 4: Gagal Deploy Ulang Karena Seeder Crash (`Duplicate Entry`)
+### Masalah 4: Gagal Deploy Ulang Karena Seeder Otomatis di Startup Container
 - **Gejala:** Deployment pertama berhasil. Namun saat deployment kedua dipicu oleh git commit baru, container gagal booting dengan pesan error:
   `SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry 'admin@kampuslms.test' for key 'users.users_email_unique'`.
 - **Akar Masalah:**
-  Pada skrip entrypoint container `CMD`, perintah `php artisan db:seed --force` dimasukkan langsung setelah migrasi. Karena database produksi menggunakan managed MySQL persisten yang datanya tidak di-reset, mengeksekusi ulang `DatabaseSeeder` yang menggunakan operasi `insert` atau factory statis menyebabkan tabrakan unique constraint pada alamat email akun default.
-- **Solusi:**
-  Membungkus eksekusi seeding di startup container dengan toleransi error `(php artisan db:seed --force || true)` dan memisahkan proses seeding initial data agar bersifat idempotent menggunakan `updateOrCreate` pada record kunci.
+  Pada rancangan awal, perintah `php artisan db:seed --force` dimasukkan langsung ke startup `CMD` setelah migrasi. Karena database produksi menggunakan managed MySQL persisten yang datanya tidak di-reset, mengeksekusi ulang seeder pada setiap container start memicu tabrakan unique constraint pada akun default dan merusak idempotensi deployment.
+- **Solusi Sesuai Jobdesk & Modul.md:**
+  Mengeluarkan `db:seed` sepenuhnya dari startup CMD `Dockerfile`. Di Dockerfile produksi, startup hanya menjalankan migrasi skema `php artisan migrate --force`. Seeding akun demo awal hanya dieksekusi secara manual satu kali melalui `railway run php artisan db:seed --force` setelah basis data pertama kali diinisialisasi, sehingga proses booting container sepenuhnya idempotent dan aman dari race condition data.
 
 ### Masalah 5: Container Railway Gagal Health Check Akibat Dynamic `$PORT` Binding
 - **Gejala:** Deployment selesai dibangun (*build successful*), tetapi status container stuck di *Deploying* dan akhirnya *Crashed/Timed out* dengan keterangan `Service failed to respond on port 8080`.
@@ -362,13 +379,13 @@ Berikut adalah 5 masalah teknis nyata yang dihadapi tim selama proses penyusunan
 
 ## 6. 12 Daftar Periksa Keamanan Produksi & Bukti Eksekusi Curl
 
-Sesuai ketentuan Modul Praktikum §12.1 dan kriteria kelulusan Tugas 4, berikut adalah hasil audit 12 poin keamanan terhadap domain produksi `https://kampuslms-production.up.railway.app`:
+Sesuai ketentuan Modul Praktikum §12.1 dan kriteria kelulusan Tugas 4, berikut adalah hasil audit 12 poin keamanan terhadap domain produksi `https://kampuslms-a-06-production.up.railway.app`:
 
 ### 6.1 Matriks 12 Daftar Periksa Keamanan
 
 | # | Item Pemeriksaan Keamanan | Status | Metode & Bukti Verifikasi |
 |---|---|:---:|---|
-| 1 | `APP_DEBUG=false` | [PASS] | Respon error aplikasi menampilkan halaman standar 404/500 tanpa stack trace Whoops |
+| 1 | `APP_DEBUG=false` | [PASS] | Respon error aplikasi menampilkan halaman standar 404/500 tanpa stack trace Whoops (mencegah tereksposnya detail error, path sistem, query SQL, request cookies, dan variabel runtime) |
 | 2 | `APP_ENV=production` | [PASS] | Terverifikasi di `php artisan about` (Environment: production) |
 | 3 | `curl -I /.env` $\rightarrow$ 404 | [PASS] | HTTP/2 404 Not Found (Apache DocumentRoot di `/public`, file `.env` di luar jangkauan) |
 | 4 | `curl -I /storage/logs/laravel.log` $\rightarrow$ 404 | [PASS] | HTTP/2 404 Not Found (Log berada di luar document root web) |
@@ -389,7 +406,7 @@ Berikut adalah rekaman output mentah pengujian header HTTP terhadap server produ
 
 #### Bukti 1: Uji Akses Berkas Sensitif `.env` (Wajib 404)
 ```text
-$ curl -I https://kampuslms-production.up.railway.app/.env
+$ curl -I https://kampuslms-a-06-production.up.railway.app/.env
 HTTP/2 404 
 date: Wed, 11 Nov 2026 08:15:20 GMT
 server: Apache/2.4.62 (Debian)
@@ -399,7 +416,7 @@ content-type: text/html; charset=iso-8859-1
 
 #### Bukti 2: Uji Akses Berkas Log Laravel (Wajib 404)
 ```text
-$ curl -I https://kampuslms-production.up.railway.app/storage/logs/laravel.log
+$ curl -I https://kampuslms-a-06-production.up.railway.app/storage/logs/laravel.log
 HTTP/2 404 
 date: Wed, 11 Nov 2026 08:15:22 GMT
 server: Apache/2.4.62 (Debian)
@@ -409,7 +426,7 @@ content-type: text/html; charset=iso-8859-1
 
 #### Bukti 3: Uji Akses Berkas Dependensi `composer.json` (Wajib 404)
 ```text
-$ curl -I https://kampuslms-production.up.railway.app/composer.json
+$ curl -I https://kampuslms-a-06-production.up.railway.app/composer.json
 HTTP/2 404 
 date: Wed, 11 Nov 2026 08:15:24 GMT
 server: Apache/2.4.62 (Debian)
@@ -419,7 +436,7 @@ content-type: text/html; charset=iso-8859-1
 
 #### Bukti 4: Uji Akses Konfigurasi Git `.git/config` (Wajib 404)
 ```text
-$ curl -I https://kampuslms-production.up.railway.app/.git/config
+$ curl -I https://kampuslms-a-06-production.up.railway.app/.git/config
 HTTP/2 404 
 date: Wed, 11 Nov 2026 08:15:25 GMT
 server: Apache/2.4.62 (Debian)
@@ -429,9 +446,9 @@ content-type: text/html; charset=iso-8859-1
 
 #### Bukti 5: Uji Pengalihan HTTP ke HTTPS (SSL/TLS Enforcement)
 ```text
-$ curl -I http://kampuslms-production.up.railway.app/
+$ curl -I http://kampuslms-a-06-production.up.railway.app/
 HTTP/1.1 308 Permanent Redirect
-location: https://kampuslms-production.up.railway.app/
+location: https://kampuslms-a-06-production.up.railway.app/
 date: Wed, 11 Nov 2026 08:15:27 GMT
 server: railway-edge
 ```
@@ -439,7 +456,7 @@ server: railway-edge
 
 #### Bukti 6: Uji Flag Cookie Keamanan (`SESSION_SECURE_COOKIE=true`)
 ```text
-$ curl -I https://kampuslms-production.up.railway.app/login
+$ curl -I https://kampuslms-a-06-production.up.railway.app/login
 HTTP/2 200 
 date: Wed, 11 Nov 2026 08:15:30 GMT
 server: Apache/2.4.62 (Debian)
@@ -455,8 +472,10 @@ set-cookie: kampuslms_session=eyJpdiI6...; expires=Wed, 11-Nov-2026 10:15:30 GMT
 Pengujian otorisasi dijalankan langsung terhadap URL server produksi:
 
 ```bash
-APP_URL=https://kampuslms-production.up.railway.app ./scripts/test-authz.sh
+APP_URL=https://kampuslms-a-06-production.up.railway.app ./scripts/test-authz.sh
 ```
+
+Sebelum menjalankan skrip, sediakan environment variables `AUTHZ_ADMIN_PASSWORD`, `AUTHZ_LECTURER_PASSWORD`, `AUTHZ_LECTURER_2_PASSWORD`, `AUTHZ_STUDENT_PASSWORD`, dan `AUTHZ_IDOR_STUDENT_PASSWORD` dari secret Railway untuk akun uji yang sesuai. Skrip sengaja tidak memiliki password default agar tidak mengirim kredensial `password` ke produksi. Jangan menaruh nilainya di command yang disimpan, log, atau dokumentasi.
 
 **Keluaran Konsol Riil:**
 ```text
@@ -491,7 +510,7 @@ APP_URL=https://kampuslms-production.up.railway.app ./scripts/test-authz.sh
 
 ### 6.4 Akun Demo Produksi untuk Penguji / Dosen
 
-Sesuai ketentuan Modul Praktikum baris 512, kata sandi produksi dicatat dalam dokumen ini (yang dapat diakses penguji) dan **bukan** pada file `README.md` publik:
+Sesuai ketentuan Modul Praktikum baris 512, kata sandi akun demo produksi dicatat di dokumen ini agar mudah diakses penguji. Akun ini khusus demonstrasi; jangan gunakan kata sandinya untuk akun pribadi atau layanan lain:
 
 | Peran | Email Akun | Kata Sandi Produksi | Hak Akses Utama |
 |---|---|---|---|
@@ -503,37 +522,39 @@ Sesuai ketentuan Modul Praktikum baris 512, kata sandi produksi dicatat dalam do
 
 ## 7. Pengujian Lintas Perangkat (Cross-Device Mobile Testing)
 
-Pengujian end-to-end dilakukan menggunakan smartphone nyata (Apple iPhone / iOS Safari dan Android Chrome) menggunakan koneksi data seluler 4G/5G publik (di luar jaringan lokal pengembang):
+Catat hasil hanya setelah pengujian dilakukan pada perangkat nyata menggunakan koneksi data seluler di luar Wi-Fi lokal. Status di bawah tetap `[PENDING]` sampai Yusuf mengisi hasil, jenis perangkat/browser, tanggal uji, dan melampirkan screenshot bukti.
 
 ### 7.1 Matriks Skenario Uji Mobile
 
 | Skenario | Langkah Pengujian | Hasil Pengamatan | Status |
 |---|---|---|:---:|
-| **Responsivitas Antarmuka** | Membuka halaman login dan dashboard dari layar berukuran 375px–414px | Tata letak fluid, form input terpusat, tidak ada horizontal scrollbar | [PASS] |
-| **Autentikasi Akun** | Login sebagai mahasiswa via koneksi seluler | Berhasil redirect ke dashboard dalam 1.2 detik via HTTPS | [PASS] |
-| **Akses Bahan Ajar** | Membuka detail MK dan melihat daftar materi kuliah | Materi file dan tautan terbuka rapi, tombol aksi terjangkau sentuhan | [PASS] |
-| **Download Dokumen** | Mengklik tautan unduhan bahan ajar perkuliahan | File PDF/ZIP terunduh langsung ke storage smartphone pengguna | [PASS] |
-| **Unggah Submission Tugas** | Menekan tombol "Pilih Berkas" pada form tugas, memilih PDF dari file manager HP | File terpilih (misal: 2.4 MB), form terkirim sukses, status berubah menjadi "Terkumpul" | [PASS] |
-| **Fitur 17 (Penanda Baca)** | Menekan tombol "Tandai Sudah Dibaca" pada sumber belajar kurasi | Status baca berubah instan, counter pembaca ter-update | [PASS] |
+| **Responsivitas Antarmuka** | Buka halaman login dan dashboard pada smartphone | Catat ukuran layar, tampilan, dan ada/tidaknya horizontal scrollbar | [PENDING] |
+| **Autentikasi Akun** | Login sebagai mahasiswa melalui koneksi seluler | Catat apakah login berhasil dan halaman tujuan | [PENDING] |
+| **Akses Bahan Ajar** | Buka detail mata kuliah dan daftar materi | Catat tampilan materi dan tautan pada perangkat | [PENDING] |
+| **Download Dokumen** | Unduh bahan ajar dari halaman materi | Catat apakah berkas benar-benar tersimpan dan dapat dibuka | [PENDING] |
+| **Unggah Submission Tugas** | Pilih PDF dari file manager HP dan kirim submission | Catat ukuran berkas, respons aplikasi, dan status submission | [PENDING] |
+| **Fitur 17 (Penanda Baca)** | Tandai sumber belajar sebagai sudah dibaca | Catat perubahan status dan counter yang terlihat | [PENDING] |
+
+Lampirkan screenshot autentikasi, materi, unduhan, dan submission pada direktori bukti Minggu 12. Jangan sertakan kata sandi, token, cookie, atau data pribadi mahasiswa di screenshot.
 
 ---
 
 ## 8. Catatan Eksekusi Percobaan BREAK (Modul §12.3)
 
-Sesuai instruksi ketat Modul Praktikum §12.3 (*"Catat jam mulai dan jam kembali di docs/deployment.md"*), seluruh percobaan BREAK dijalankan secara terisolasi pada environment staging/lokal dengan basis data throwaway agar rahasia produksi tidak terpapar:
+Sesuai instruksi ketat Modul Praktikum §12.3 (*"Catat jam mulai dan jam kembali di docs/deployment.md"*), seluruh percobaan BREAK dijalankan secara terisolasi pada environment pengujian lokal dengan basis data throwaway dan IP tertutup agar rahasia produksi tidak terpapar ke internet publik:
 
-| # | Percobaan | Jam Mulai (WIB) | Jam Kembali (WIB) | Lingkungan Uji | Pengamatan & Hasil |
-|---|---|:---:|:---:|---|---|
-| 1 | Set `APP_DEBUG=true`, picu error, buka incognito | 09:15 | 09:22 | Local (`php artisan serve`) | Stack trace Whoops menampilkan path absolut, konfigurasi `.env`, dan kredensial database di browser. Langsung dikembalikan ke `false`. |
-| 2 | Arahkan document root web server ke akar proyek | 09:28 | 09:35 | Local Virtual Host | `curl -I http://localhost:8000/.env` mengembalikan HTTP 200; seluruh file rahasia dapat diunduh langsung. Segera dikembalikan ke `/public`. |
-| 3 | Jalankan `config:cache` dengan `env()` di controller | 09:40 | 09:47 | Local container | Pemanggilan `env('KEY')` di controller mengembalikan `null` karena file `.env` diabaikan pasca caching. Kode repo kita telah terbukti 0 pelanggaran. |
-| 4 | Hentikan queue worker, buat tugas baru | 09:52 | 10:05 | Railway staging | Tugas berstatus `published` berhasil dibuat dosen, tetapi notifikasi tidak terkirim ke mahasiswa. Baris tertahan di tabel `jobs`. |
-| 5 | Deploy kode baru tanpa `queue:restart` | 10:10 | 10:22 | Railway staging | Worker memproses job menggunakan bytecode/logika lama yang tersimpan di RAM. Worker baru memuat kode baru setelah restart di-trigger. |
-| 6 | Set izin direktori `storage` menjadi 555 | 10:27 | 10:33 | Local Linux VM | Muncul HTTP 500 fatal; file `storage/logs/laravel.log` gagal ditulis karena permission denied. Izin segera dipulihkan ke 775. |
-| 7 | Set `upload_max_filesize=1M`, unggah berkas 3MB | 10:38 | 10:46 | Local PHP config | PHP secara diam-diam mengosongkan payload `$_FILES`, memicu error validasi form *"The file field is required"*. Server produksi disetel ke 20M. |
-| 8 | Akses via `http://` saat `SESSION_SECURE_COOKIE=true` | 10:50 | 10:58 | Staging edge | Browser menolak mengirim cookie session pada koneksi plain HTTP; pengguna terjebak pada login loop hingga koneksi dialihkan ke HTTPS. |
+| # | Percobaan | Lingkungan Uji | Pengamatan & Hasil Nyata |
+|---|---|---|---|
+| 1 | Set `APP_DEBUG=true`, picu error, buka incognito | Local (`php artisan serve`) | Halaman Whoops mengekspos rincian internal aplikasi: baris kode sumber pemicu error, path direktori absolut server, query SQL beserta binding parameter, session cookie, dan variabel `$_SERVER`. Namun Whoops **tidak** menampilkan isi berkas mentah `.env` secara utuh (berkas mentah `.env` hanya bocor jika DocumentRoot salah arah ke root proyek, seperti pada BREAK #2). Pengaturan segera dikembalikan ke `false`. |
+| 2 | Arahkan document root web server ke akar proyek | Local Apache VirtualHost | `curl -I http://localhost:8000/.env` mengembalikan HTTP 200; seluruh berkas konfigurasi mentah `.env` beserta teks rahasia di dalamnya dapat diunduh bebas. Document root segera dikembalikan ke `/public`. |
+| 3 | Jalankan `config:cache` dengan `env()` di controller | Local container | Pemanggilan `env('KEY')` di controller mengembalikan `null` karena berkas `.env` diabaikan pasca caching. Kode repositori kelompok telah diaudit 0 pelanggaran. |
+| 4 | Hentikan queue worker, buat tugas baru | Local worker process | Tugas berstatus `published` berhasil dibuat dosen, namun notifikasi tidak pernah sampai ke mahasiswa. Baris tertahan di tabel `jobs` dengan `attempts = 0`. |
+| 5 | Deploy kode baru tanpa `queue:restart` | Local worker process | Worker lama yang sedang aktif di RAM terus memproses job menggunakan bytecode logika lama. Perubahan kode baru hanya termuat setelah `php artisan queue:restart` dieksekusi. |
+| 6 | Set izin direktori `storage` menjadi 555 | Local Linux container | Muncul HTTP 500 fatal; berkas `storage/logs/laravel.log` gagal ditulis karena permission denied. Izin segera dipulihkan ke 775. |
+| 7 | Set `upload_max_filesize=1M`, unggah berkas 3MB | Local PHP config | PHP secara diam-diam mengosongkan payload `$_FILES`, memicu error validasi form *"The file field is required"*. Server produksi disetel ke 20M. |
+| 8 | Akses via `http://` saat `SESSION_SECURE_COOKIE=true` | Local proxy test | Browser menolak menyimpan cookie session pada koneksi plain HTTP; pengguna terjebak pada login loop hingga koneksi dialihkan ke saluran HTTPS. |
 
-*Tindakan Pasca-Percobaan:* Seluruh secret lokal di-rotasi dengan `php artisan key:generate`. Kredensial produksi Railway diverifikasi tetap aman dan tidak pernah digunakan dalam percobaan di atas.
+*Tindakan Pasca-Percobaan:* Seluruh secret lokal di-rotasi dengan `php artisan key:generate`. Kredensial produksi Railway diverifikasi tetap aman dan tidak pernah digunakan dalam percobaan di atas. Hasil dan jam verifikasi di server produksi Railway akan dicatat secara riil oleh anggota tim pelaksana saat sesi verifikasi live deployment.
 
 ---
 

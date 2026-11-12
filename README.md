@@ -4,9 +4,9 @@ Proyek ini adalah implementasi tugas Modul 1 (Mengenal Laravel 12) untuk pengemb
 
 ## Deployment Produksi (Milestone M4 / Tugas 4)
 
-- **Aplikasi Live:** [https://kampuslms-production.up.railway.app](https://kampuslms-production.up.railway.app)
+- **Aplikasi Live:** [https://kampuslms-a-06-production.up.railway.app](https://kampuslms-a-06-production.up.railway.app)
 - **Status:** Live di domain publik dengan sertifikat HTTPS aktif
-- **Dokumentasi Lengkap:** Panduan deployment dari nol, spesifikasi server, mitigasi masalah, dan kata sandi akun demo produksi dicatat di [`docs/deployment.md`](docs/deployment.md)
+- **Dokumentasi Lengkap:** Panduan deployment dari nol, spesifikasi server, mitigasi masalah, dan akun demo produksi dicatat di [`docs/deployment.md`](docs/deployment.md)
 
 ## Daftar Anggota
 
@@ -23,14 +23,18 @@ Ikuti langkah-langkah di bawah ini untuk menjalankan proyek secara lokal:
 
 1. **Clone repositori**
    ```bash
-   git clone [https://github.com/SufSoup/kampuslms-a-kelompok-06.git]
+   git clone https://github.com/SufSoup/kampuslms-a-kelompok-06.git
    cd kampuslms-a-kelompok-06
+   cd lms
    ```
 
-2. **Install dependensi (Vendor)**
+2. **Install dependensi lokal** (PHP 8.4.1 atau lebih baru dalam seri 8.4, Composer, dan Node.js 20 diperlukan)
    ```bash
    composer install
+   npm ci
+   npm run build
    ```
+   Laravel Debugbar dipasang sebagai dependensi development untuk profiling lokal. Jangan aktifkan atau pasang paket development di produksi.
 
 3. **Siapkan pengaturan environment**
    ```bash
@@ -66,10 +70,9 @@ php artisan queue:retry all
 ```
 
 ### 2. Pengujian Otorisasi & Anti-IDOR Otomatis
-Jalankan server terlebih dahulu (`php artisan serve`), lalu pada terminal terpisah:
+Jalankan server terlebih dahulu (`php artisan serve`) dari direktori `lms/`. Pada terminal terpisah, siapkan lima environment variables `AUTHZ_ADMIN_PASSWORD`, `AUTHZ_LECTURER_PASSWORD`, `AUTHZ_LECTURER_2_PASSWORD`, `AUTHZ_STUDENT_PASSWORD`, dan `AUTHZ_IDOR_STUDENT_PASSWORD` menggunakan kredensial akun lokal, lalu dari direktori root repositori jalankan:
 ```bash
-chmod +x scripts/test-authz.sh
-./scripts/test-authz.sh
+APP_URL=http://127.0.0.1:8000 ./scripts/test-authz.sh
 ```
 Skrip ini menguji:
 - **RBAC:** Penolakan akses lintas peran (Dosen/Mahasiswa ke rute Admin).
