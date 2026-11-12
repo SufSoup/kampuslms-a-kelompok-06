@@ -1,16 +1,26 @@
 <x-layout title="Notifikasi — KampusLMS">
-    <div style="max-width: 900px; margin: 0 auto; padding: 24px 16px;">
-        <div style="margin-bottom: 24px;">
-            <h1 style="font-size: 32px; margin: 0 0 6px;">Notifikasi</h1>
-            <p style="color: #6E6E73; margin: 0;">Informasi terbaru untuk akun Anda.</p>
+    @php
+        $unreadCount = $notifications->getCollection()->whereNull('read_at')->count();
+    @endphp
+
+    <div class="container-medium" style="margin: 0 auto;">
+        <div class="page-header">
+            <h1 class="page-title">Notifikasi</h1>
+            <p class="page-desc">
+                Informasi terbaru untuk akun Anda
+                @if ($unreadCount > 0)
+                    &mdash; {{ $unreadCount }} belum dibaca
+                @endif
+            </p>
         </div>
 
         @if ($notifications->isEmpty())
-            <div style="padding: 32px; background: #F5F5F7; border: 1px dashed #D1D1D6; border-radius: 12px; text-align: center; color: #6E6E73;">
-                Belum ada notifikasi.
+            <div class="empty-state">
+                <x-icon name="bell" class="icon" />
+                <span>Belum ada notifikasi.</span>
             </div>
         @else
-            <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div class="item-list">
                 @foreach ($notifications as $notification)
                     @php
                         $payload = is_array($notification->data) ? $notification->data : [];
@@ -20,54 +30,53 @@
                         $dueAt = $payload['due_at'] ?? null;
                     @endphp
 
-                    <article style="background: #FFFFFF; border: 1px solid #E5E5EA; border-radius: 12px; padding: 20px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
-                        <div style="min-width: 0; flex: 1;">
-                            <div style="margin-bottom: 8px;">
+                    <article class="item-card {{ $notification->read_at ? '' : 'is-unread' }}">
+                        <div class="item-main">
+                            <div class="item-eyebrow">
                                 @if ($notification->read_at)
-                                    <span style="display: inline-block; padding: 4px 9px; border-radius: 999px; background: #E5E5EA; color: #424245; font-size: 12px; font-weight: 600;">
-                                        Sudah Dibaca
-                                    </span>
+                                    <span class="badge badge-neutral">Sudah Dibaca</span>
                                 @else
-                                    <span style="display: inline-block; padding: 4px 9px; border-radius: 999px; background: #DBEAFE; color: #1D4ED8; font-size: 12px; font-weight: 600;">
-                                        Belum Dibaca
-                                    </span>
+                                    <span class="badge badge-primary">Belum Dibaca</span>
                                 @endif
                             </div>
 
-                            <h2 style="font-size: 18px; margin: 0 0 6px;">
+                            <h2 class="item-title">
                                 {{ is_string($title) && trim($title) !== '' ? $title : 'Notifikasi baru' }}
                             </h2>
 
                             @if (is_string($message) && trim($message) !== '')
-                                <p style="margin: 0 0 6px; color: #424245;">{{ $message }}</p>
+                                <p class="item-desc">{{ $message }}</p>
                             @endif
 
-                            @if (is_string($courseName) && trim($courseName) !== '')
-                                <p style="margin: 0 0 6px; color: #6E6E73;">Mata kuliah: {{ $courseName }}</p>
-                            @endif
+                            <div class="item-meta">
+                                @if (is_string($courseName) && trim($courseName) !== '')
+                                    <span><x-icon name="book" class="icon-sm" /> {{ $courseName }}</span>
+                                @endif
+                                @if (is_string($dueAt) && trim($dueAt) !== '')
+                                    <span><x-icon name="clock" class="icon-sm" /> Batas waktu: {{ $dueAt }}</span>
+                                @endif
+                            </div>
 
-                            @if (is_string($dueAt) && trim($dueAt) !== '')
-                                <p style="margin: 0 0 6px; color: #6E6E73;">Batas waktu: {{ $dueAt }}</p>
-                            @endif
-
-                            <time datetime="{{ $notification->created_at?->toIso8601String() }}" style="display: block; margin-top: 10px; color: #8E8E93; font-size: 13px;">
+                            <time datetime="{{ $notification->created_at?->toIso8601String() }}" class="text-muted" style="display: block; margin-top: 8px; font-size: 13px;">
                                 {{ $notification->created_at?->format('d M Y H:i') ?? 'Waktu tidak tersedia' }}
                             </time>
                         </div>
 
                         @unless ($notification->read_at)
-                            <form method="POST" action="{{ route('notifications.read', ['id' => $notification->id]) }}" style="margin: 0;">
-                                @csrf
-                                <button type="submit" style="background: transparent; color: #0071E3; border: 1px solid #0071E3; padding: 8px 14px; border-radius: 999px; cursor: pointer; white-space: nowrap;">
-                                    Tandai Sudah Dibaca
-                                </button>
-                            </form>
+                            <div class="item-actions">
+                                <form method="POST" action="{{ route('notifications.read', ['id' => $notification->id]) }}" style="margin: 0;">
+                                    @csrf
+                                    <button type="submit" class="btn btn-secondary btn-sm">
+                                        <x-icon name="check" class="icon-sm" /> Tandai Sudah Dibaca
+                                    </button>
+                                </form>
+                            </div>
                         @endunless
                     </article>
                 @endforeach
             </div>
 
-            <div style="margin-top: 24px;">
+            <div class="pagination-wrapper">
                 {{ $notifications->links() }}
             </div>
         @endif
