@@ -23,11 +23,12 @@ echo "=== [2/8] Memperbarui Dependensi Composer ==="
 # Menginstal paket vendor tanpa paket dev dan mengoptimalkan classmap autoloader.
 # Akibat jika dihilangkan: Perubahan dependensi tidak terinstal, dan autoloader tidak teroptimasi
 # menyebabkan overhead disk I/O lambat pada setiap request PHP.
-if command -v composer &> /dev/null; then
-    composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
-else
-    echo "[INFO] Composer tidak terdeteksi di PATH shell saat ini; melewati instalasi dependensi."
+if ! command -v composer &> /dev/null; then
+    echo "[ERROR] Composer tidak ditemukan di PATH."
+    exit 1
 fi
+
+composer install --no-dev --optimize-autoloader --no-interaction
 
 echo "=== [3/8] Mengompilasi Aset Frontend (Vite) ==="
 # Mengompilasi CSS dan JS untuk produksi ke folder public/build.
