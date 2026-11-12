@@ -25,7 +25,7 @@ RUN apt-get update && apt-get install -y \
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
 
 # Configure PHP upload limits (modul.md §12.1: upload_max_filesize & post_max_size)
-RUN echo "upload_max_filesize = 20M\npost_max_size = 25M\nmemory_limit = 256M" > /usr/local/etc/php/conf.d/uploads.ini
+RUN printf "upload_max_filesize = 20M\npost_max_size = 25M\nmemory_limit = 256M\n" > /usr/local/etc/php/conf.d/uploads.ini
 
 # Configure Apache MPM & mod_rewrite, allow .htaccess overrides
 RUN a2enmod rewrite \
@@ -50,15 +50,18 @@ COPY . .
 # Copy compiled frontend assets from Stage 1
 COPY --from=frontend /app/public/build ./public/build
 
-# Install PHP production dependencies without dev packages
-RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
+# Install PHP production dependencies without dev packages.
+# Tanpa --ignore-platform-reqs: semua ekstensi wajib sudah terpasang di tahap ini,
+# kegagalan requirement harus terlihat saat build, bukan saat runtime.
+RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # Set permissions for storage and cache directories
 RUN chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
-# Expose HTTP and Railway default ports
-EXPOSE 80 8080
+# Railway meng-assign $PORT (default 8080); Apache diarahkan mendengarkan port tersebut
+EXPOSE 8080
 
-# Production startup: ensure single MPM, bind dynamic $PORT, clear stale cache, migrate, seed demo, cache warm-up, and start Apache
-CMD ["sh", "-c", "rm -f /etc/apache2/mods-enabled/mpm_event.* /etc/apache2/mods-enabled/mpm_worker.* && export PORT=\"${PORT:-8080}\" && sed -i \"s/Listen .*/Listen $PORT/\" /etc/apache2/ports.conf && sed -i \"s/<VirtualHost \\*:.*>/<VirtualHost \\*:$PORT>/\" /etc/apache2/sites-available/000-default.conf && php artisan config:clear && php artisan route:clear && php artisan view:clear && (php artisan migrate --force || true) && (php artisan db:seed --force || true) && php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan event:cache && exec apache2-foreground"]
+# Production startup: bind dynamic $PORT, migrate (fatal jika gagal agar Railway restart), cache warm-up, lalu Apache.
+# DILARANG db:seed di sini — seeding hanya dijalankan manual sekali via Railway Shell setelah MySQL siap.
+CMD ["sh", "-c", "rm -f /etc/apache2/mods-enabled/mpm_event.* /etc/apache2/mods-enabled/mpm_worker.* && export PORT=\"${PORT:-8080}\" && sed -i \"s/Listen .*/Listen $PORT/\" /etc/apache2/ports.conf && sed -i \"s/<VirtualHost \\*:.*>/<VirtualHost \\*:$PORT>/\" /etc/apache2/sites-available/000-default.conf && php artisan config:clear && php artisan route:clear && php artisan view:clear && php artisan migrate --force && php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan event:cache && exec apache2-foreground"]
