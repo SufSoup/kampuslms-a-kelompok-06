@@ -4,7 +4,7 @@
 - **NIM:** 10241049
 - **Kelompok:** Kelompok 06 (Kelas A)
 - **Topik:** Optimisasi Produksi, Queue Engine & Otomasi Deployment
-- **Branch:** `feat/w12-prod-optimization`
+- **Branch:** `ikhsyan`
 - **Status verifikasi produksi:** `[PENDING]` — service Railway belum dibuat dan domain live belum aktif.
 
 ---
@@ -141,7 +141,7 @@ Status: `[PENDING]` — service belum dibuat karena deployment Railway belum ber
 
 ### 4.4 Hasil Pengujian
 
-- Seluruh unit & feature test pada branch `feat/w12-prod-optimization`: **195 passed (784 assertions)**.
+- Seluruh unit & feature test pada branch `ikhsyan`: **195 passed (784 assertions)**.
 - Validasi `test_no_env_calls_outside_config_directory`: **Passed**.
 - Validasi `NotificationEngineTest` & `QueueReliabilityTest`: **Passed**.
 - Validasi sintaks `lms/deploy.sh` dengan `bash -n`: **Passed**.
