@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use RuntimeException;
 
 class DemoAccountSeeder extends Seeder
 {
@@ -16,32 +17,47 @@ class DemoAccountSeeder extends Seeder
             [
                 'email' => 'admin@kampuslms.test',
                 'name' => 'Admin Kampus LMS',
-                'password' => 'password',
+                'password' => config('demo.passwords.admin'),
                 'role' => 'admin',
                 'nim_nip' => null,
             ],
             [
                 'email' => 'dosen@kampuslms.test',
                 'name' => 'Dosen Demo',
-                'password' => 'password',
+                'password' => config('demo.passwords.lecturer'),
                 'role' => 'dosen',
                 'nim_nip' => '198001010001',
             ],
             [
+                'email' => 'budi.dosen@kampuslms.test',
+                'name' => 'Budi Santoso',
+                'password' => config('demo.passwords.lecturer_2'),
+                'role' => 'dosen',
+                'nim_nip' => '198001010002',
+            ],
+            [
                 'email' => 'mahasiswa@kampuslms.test',
                 'name' => 'Mahasiswa Demo',
-                'password' => 'password',
+                'password' => config('demo.passwords.student'),
                 'role' => 'mahasiswa',
                 'nim_nip' => '2024105001',
             ],
             [
                 'email' => 'mahasiswa2@kampuslms.test',
                 'name' => 'Mahasiswa IDOR Test',
-                'password' => 'password',
+                'password' => config('demo.passwords.idor_student'),
                 'role' => 'mahasiswa',
                 'nim_nip' => null,
             ],
         ];
+
+        foreach ($accounts as $account) {
+            if (! is_string($account['password']) || $account['password'] === '') {
+                throw new RuntimeException(
+                    "Set a non-empty production password for {$account['email']} before seeding demo accounts."
+                );
+            }
+        }
 
         foreach ($accounts as $account) {
             $user = User::withTrashed()->firstOrNew([
