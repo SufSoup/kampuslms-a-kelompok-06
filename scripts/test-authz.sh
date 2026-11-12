@@ -3,6 +3,11 @@ set -euo pipefail
 
 APP_URL="${APP_URL:-http://127.0.0.1:8000}"
 APP_URL="${APP_URL%/}"
+AUTHZ_ADMIN_PASSWORD="${AUTHZ_ADMIN_PASSWORD:-}"
+AUTHZ_LECTURER_PASSWORD="${AUTHZ_LECTURER_PASSWORD:-}"
+AUTHZ_LECTURER_2_PASSWORD="${AUTHZ_LECTURER_2_PASSWORD:-}"
+AUTHZ_STUDENT_PASSWORD="${AUTHZ_STUDENT_PASSWORD:-}"
+AUTHZ_IDOR_STUDENT_PASSWORD="${AUTHZ_IDOR_STUDENT_PASSWORD:-}"
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
@@ -10,6 +15,16 @@ fail() {
     echo "[FAIL] $*" >&2
     exit 1
 }
+
+for password_name in \
+    AUTHZ_ADMIN_PASSWORD \
+    AUTHZ_LECTURER_PASSWORD \
+    AUTHZ_LECTURER_2_PASSWORD \
+    AUTHZ_STUDENT_PASSWORD \
+    AUTHZ_IDOR_STUDENT_PASSWORD
+do
+    [[ -n "${!password_name}" ]] || fail "Set $password_name in the environment before running this audit."
+done
 
 expect_status() {
     local label="$1"
@@ -146,11 +161,11 @@ expect_api_status() {
 }
 
 echo "[INFO] Menguji autentikasi web dan otorisasi multi-role di $APP_URL"
-login_as "admin" "admin@kampuslms.test" "password"
-login_as "dosen" "dosen@kampuslms.test" "password"
-login_as "dosen2" "budi.dosen@kampuslms.test" "password"
-login_as "mahasiswa" "mahasiswa@kampuslms.test" "password"
-login_as "mahasiswa2" "mahasiswa2@kampuslms.test" "password"
+login_as "admin" "admin@kampuslms.test" "$AUTHZ_ADMIN_PASSWORD"
+login_as "dosen" "dosen@kampuslms.test" "$AUTHZ_LECTURER_PASSWORD"
+login_as "dosen2" "budi.dosen@kampuslms.test" "$AUTHZ_LECTURER_2_PASSWORD"
+login_as "mahasiswa" "mahasiswa@kampuslms.test" "$AUTHZ_STUDENT_PASSWORD"
+login_as "mahasiswa2" "mahasiswa2@kampuslms.test" "$AUTHZ_IDOR_STUDENT_PASSWORD"
 
 ADMIN_COOKIE="$TMP_DIR/admin.cookies"
 DOSEN_COOKIE="$TMP_DIR/dosen.cookies"
@@ -158,8 +173,8 @@ DOSEN2_COOKIE="$TMP_DIR/dosen2.cookies"
 MAHASISWA_COOKIE="$TMP_DIR/mahasiswa.cookies"
 MAHASISWA2_COOKIE="$TMP_DIR/mahasiswa2.cookies"
 
-api_login_as "mahasiswa" "mahasiswa@kampuslms.test" "password"
-api_login_as "mahasiswa2" "mahasiswa2@kampuslms.test" "password"
+api_login_as "mahasiswa" "mahasiswa@kampuslms.test" "$AUTHZ_STUDENT_PASSWORD"
+api_login_as "mahasiswa2" "mahasiswa2@kampuslms.test" "$AUTHZ_IDOR_STUDENT_PASSWORD"
 expect_guest_status "Guest ditolak mengakses notifikasi API" "401" "/api/v1/notifications"
 
 curl --silent --show-error \

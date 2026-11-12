@@ -17,7 +17,7 @@ Analisis konfigurasi produksi Laravel 12 pada repositori KampusLMS:
 | Parameter | Lokal (Development) | Produksi (Railway Container) | Alasan Perbedaan |
 |---|---|---|---|
 | `Environment` | `local` | `production` | Mengaktifkan perlindungan ketat Laravel di produksi |
-| `Debug Mode` | `true` | `false` | Mencegah Whoops membocorkan isi `.env` & kredensial DB |
+| `Debug Mode` | `true` | `false` | Mencegah Whoops membocorkan stack trace, query SQL, session cookies, dan path server |
 | `URL` | `http://127.0.0.1:8000` | `https://*.up.railway.app` | Wajib HTTPS dengan sertifikat SSL otomatis |
 | `Maintenance Mode` | `OFF` | Dikendalikan via `deploy.sh` | Mencegah race condition saat migrasi/build aset |
 | `Config Cache` | `NOT CACHED` | `CACHED` | Menghilangkan I/O disk untuk parsing file config |
