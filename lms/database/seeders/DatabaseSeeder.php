@@ -10,7 +10,7 @@ use App\Models\Material;
 use App\Models\Submission;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
@@ -25,45 +25,32 @@ class DatabaseSeeder extends Seeder
          * ============================================================
          */
 
-        // 1 admin
-        $admin = User::factory()->admin()->create([
-            'name' => 'Admin Kampus LMS',
-            'email' => 'admin@kampuslms.test',
-            'password' => 'password',
-        ]);
+        $this->call(DemoAccountSeeder::class);
 
-        // 3 dosen
+        $demoLecturer = User::where('email', 'dosen@kampuslms.test')->firstOrFail();
+        $demoLecturer2 = User::where('email', 'budi.dosen@kampuslms.test')->firstOrFail();
         $dosen = collect([
-            User::factory()->dosen()->create([
-                'name' => 'Dosen Demo',
-                'email' => 'dosen@kampuslms.test',
-                'nim_nip' => '198001010001',
-                'password' => 'password',
-            ]),
-            User::factory()->dosen()->create([
-                'name' => 'Budi Santoso',
-                'email' => 'budi.dosen@kampuslms.test',
-            ]),
+            $demoLecturer,
+            $demoLecturer2,
             User::factory()->dosen()->create([
                 'name' => 'Siti Rahmawati',
                 'email' => 'siti.dosen@kampuslms.test',
+                'password' => Str::random(48),
             ]),
         ]);
 
         // 30 mahasiswa
+        $demoStudent = User::where('email', 'mahasiswa@kampuslms.test')->firstOrFail();
+        $idorStudent = User::where('email', 'mahasiswa2@kampuslms.test')->firstOrFail();
         $mahasiswa = collect([
-            User::factory()->mahasiswa()->create([
-                'name' => 'Mahasiswa Demo',
-                'email' => 'mahasiswa@kampuslms.test',
-                'nim_nip' => '2024105001',
-                'password' => 'password',
-            ]),
-            User::factory()->mahasiswa()->create([
-                'name' => 'Mahasiswa IDOR Test',
-                'email' => 'mahasiswa2@kampuslms.test',
-                'password' => 'password',
-            ]),
-            ...User::factory()->mahasiswa()->count(28)->create()->all(),
+            $demoStudent,
+            $idorStudent,
+            ...User::factory()
+                ->mahasiswa()
+                ->count(28)
+                ->state(fn () => ['password' => Str::random(48)])
+                ->create()
+                ->all(),
         ]);
 
         /*
@@ -118,7 +105,6 @@ class DatabaseSeeder extends Seeder
         }
 
         $firstCourse = $courses->first();
-        $demoStudent = $mahasiswa->firstWhere('email', 'mahasiswa@kampuslms.test');
         if ($firstCourse && $demoStudent) {
             $firstCourse->students()->syncWithoutDetaching([
                 $demoStudent->id => ['enrolled_at' => now()],

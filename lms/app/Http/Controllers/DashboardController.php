@@ -6,7 +6,9 @@ use App\Models\Assignment;
 use App\Models\Course;
 use App\Models\Material;
 use App\Models\User;
+use App\Support\DashboardCache;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -17,18 +19,31 @@ class DashboardController extends Controller
 
         $data = match ($user->role) {
             'admin' => [
-                'stats' => [
-                    'users' => User::query()->count(),
-                    'courses' => Course::query()->count(),
-                    'materials' => Material::query()->count(),
-                    'assignments' => Assignment::query()->count(),
-                ],
+                'stats' => Cache::remember(
+                    DashboardCache::ADMIN_STATS_KEY,
+                    now()->addMinutes(DashboardCache::TTL_MINUTES),
+                    fn (): array => [
+                        'users' => User::query()->count(),
+                        'courses' => Course::query()->count(),
+                        'materials' => Material::query()->count(),
+                        'assignments' => Assignment::query()->count(),
+                    ]
+                ),
             ],
             'dosen' => [
-                'taughtCourses' => $user->taughtCourses()
-                    ->withCount(['students', 'materials', 'assignments'])
-                    ->orderBy('name')
-                    ->get(),
+                'taughtCourses' => Cache::remember(
+                    DashboardCache::lecturerCoursesKey($user->id),
+                    now()->addMinutes(DashboardCache::TTL_MINUTES),
+                    fn () => $user->taughtCourses()
+                        ->withCount([
+                            'students',
+                            'materials',
+                            'assignments',
+                            'submissions as ungraded_submissions_count' => fn ($query) => $query->whereDoesntHave('grade'),
+                        ])
+                        ->orderBy('name')
+                        ->get()
+                ),
             ],
             'mahasiswa' => $this->studentDashboardData($user),
             default => abort(403, 'Peran pengguna tidak memiliki akses ke dashboard.'),
