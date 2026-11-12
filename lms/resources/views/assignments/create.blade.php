@@ -1,44 +1,71 @@
-<x-layout title="Buat Tugas">
-    <h1>Buat Tugas</h1>
-    <p>Mata kuliah: {{ $course->name }} ({{ $course->code }})</p>
+<x-layout title="Buat Tugas — {{ $course->name }}">
+    <div class="breadcrumb">
+        <a href="{{ route('dosen.assignments.index') }}"><x-icon name="arrow-left" class="icon-sm" /> Daftar Tugas</a>
+    </div>
+
+    <div class="page-header">
+        <h1 class="page-title">Buat Tugas</h1>
+        <p class="page-desc">Mata kuliah: {{ $course->name }} ({{ $course->code }})</p>
+    </div>
 
     @if ($errors->any())
         <div class="alert alert-danger" role="alert">
-            <ul>
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
+            <x-icon name="alert-circle" class="icon" />
+            <div>
+                <ul>
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
         </div>
     @endif
 
-    <form method="POST" action="{{ route('dosen.courses.assignments.store', $course) }}">
-        @csrf
-        <label for="title">Judul</label>
-        <input id="title" name="title" type="text" value="{{ old('title') }}" maxlength="255" required>
+    <div class="card" style="max-width: 640px;">
+        <form method="POST" action="{{ route('dosen.courses.assignments.store', $course) }}" class="form">
+            @csrf
+            <div class="field">
+                <label for="title">Judul</label>
+                <input id="title" name="title" type="text" class="input {{ $errors->has('title') ? 'is-invalid' : '' }}" value="{{ old('title') }}" maxlength="255" required>
+            </div>
 
-        <label for="instructions">Instruksi</label>
-        <textarea id="instructions" name="instructions" required>{{ old('instructions') }}</textarea>
+            <div class="field">
+                <label for="instructions">Instruksi</label>
+                <textarea id="instructions" name="instructions" class="input {{ $errors->has('instructions') ? 'is-invalid' : '' }}" required>{{ old('instructions') }}</textarea>
+            </div>
 
-        <label for="due_at">Batas pengumpulan</label>
-        <input id="due_at" name="due_at" type="datetime-local" value="{{ old('due_at') }}" required>
+            <div class="field">
+                <label for="due_at">Batas pengumpulan</label>
+                <input id="due_at" name="due_at" type="datetime-local" class="input {{ $errors->has('due_at') ? 'is-invalid' : '' }}" value="{{ old('due_at') }}" required>
+            </div>
 
-        <label for="max_score">Nilai maksimum</label>
-        <input id="max_score" name="max_score" type="number" min="1" max="100" value="{{ old('max_score', 100) }}" required>
+            <div class="field">
+                <label for="max_score">Nilai maksimum</label>
+                <input id="max_score" name="max_score" type="number" min="1" max="100" class="input {{ $errors->has('max_score') ? 'is-invalid' : '' }}" value="{{ old('max_score', 100) }}" required>
+            </div>
 
-        <label for="allow_late">Pengumpulan terlambat</label>
-        <select id="allow_late" name="allow_late" required>
-            <option value="1" @selected(old('allow_late', '1') === '1')>Diizinkan</option>
-            <option value="0" @selected(old('allow_late') === '0')>Tidak diizinkan</option>
-        </select>
+            <div class="field">
+                <label for="allow_late">Pengumpulan terlambat</label>
+                <select id="allow_late" name="allow_late" class="input" required>
+                    <option value="1" @selected(old('allow_late', '1') === '1')>Diizinkan</option>
+                    <option value="0" @selected(old('allow_late') === '0')>Tidak diizinkan</option>
+                </select>
+            </div>
 
-        <label for="status">Status</label>
-        <select id="status" name="status" required>
-            <option value="draft" @selected(old('status') === 'draft')>Draft</option>
-            <option value="published" @selected(old('status', 'published') === 'published')>Dipublikasikan</option>
-        </select>
+            <div class="field">
+                <label for="status">Status</label>
+                <select id="status" name="status" class="input" required>
+                    <option value="draft" @selected(old('status') === 'draft')>Draft</option>
+                    <option value="published" @selected(old('status', 'published') === 'published')>Dipublikasikan</option>
+                </select>
+            </div>
 
-        <button type="submit">Simpan Tugas</button>
-        <a href="{{ route('dosen.assignments.index') }}">Batal</a>
-    </form>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <x-icon name="check" class="icon-sm" /> Simpan Tugas
+                </button>
+                <a href="{{ route('dosen.assignments.index') }}" class="btn btn-secondary">Batal</a>
+            </div>
+        </form>
+    </div>
 </x-layout>
