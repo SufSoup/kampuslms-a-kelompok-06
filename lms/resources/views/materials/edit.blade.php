@@ -3,65 +3,75 @@
         $routePrefix = auth()->user()->role === 'admin' ? 'admin' : 'dosen';
         $courseRoute = $routePrefix . '.courses.show';
     @endphp
-    <div style="max-width: 640px; margin: 0 auto;">
-        <div style="margin-bottom: 24px;">
-            <a href="{{ route($courseRoute, $course) }}" style="font-size: 14px; color: #6E6E73;">
-                ← Kembali ke {{ $course->name }}
-            </a>
-            <h1 style="font-size: 32px; margin-top: 12px; margin-bottom: 4px;">Edit Materi</h1>
-            <p style="color: #6E6E73; margin: 0;">Perbarui detail materi yang dipilih.</p>
+
+    <div class="container-medium" style="margin: 0 auto;">
+        <div class="breadcrumb">
+            <a href="{{ route($courseRoute, $course) }}"><x-icon name="arrow-left" class="icon-sm" /> {{ $course->name }}</a>
+        </div>
+
+        <div class="page-header">
+            <h1 class="page-title">Edit Materi</h1>
+            <p class="page-desc">Perbarui detail materi yang dipilih.</p>
         </div>
 
         @if ($errors->any())
-            <div style="background: #FEE2E2; border: 1px solid #FCA5A5; color: #991B1B; padding: 12px 16px; border-radius: 12px; margin-bottom: 24px; font-size: 14px;">
-                @foreach ($errors->all() as $error)
-                    <div>{{ $error }}</div>
-                @endforeach
+            <div class="alert alert-danger" role="alert">
+                <x-icon name="alert-circle" class="icon" />
+                <div>
+                    <ul>
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
             </div>
         @endif
 
-        <form method="POST" enctype="multipart/form-data" action="{{ route($routePrefix . '.materials.update', $material) }}" style="display: flex; flex-direction: column; gap: 18px;">
-            @csrf
-            @method('PUT')
+        <div class="card">
+            <form method="POST" enctype="multipart/form-data" action="{{ route($routePrefix . '.materials.update', $material) }}" class="form">
+                @csrf
+                @method('PUT')
 
-            <div>
-                <label for="title">Judul Materi</label>
-                <input type="text" id="title" name="title" value="{{ old('title', $material->title) }}" required>
-            </div>
+                <div class="field">
+                    <label for="title">Judul Materi</label>
+                    <input type="text" id="title" name="title" class="input {{ $errors->has('title') ? 'is-invalid' : '' }}" value="{{ old('title', $material->title) }}" required>
+                </div>
 
-            <div>
-                <label for="type">Tipe Materi</label>
-                <select id="type" name="type" required>
-                    <option value="file" @selected(old('type', $material->type) === 'file')>Berkas</option>
-                    <option value="link" @selected(old('type', $material->type) === 'link')>Tautan</option>
-                </select>
-            </div>
+                <div class="field">
+                    <label for="type">Tipe Materi</label>
+                    <select id="type" name="type" class="input {{ $errors->has('type') ? 'is-invalid' : '' }}" required>
+                        <option value="file" @selected(old('type', $material->type) === 'file')>Berkas</option>
+                        <option value="link" @selected(old('type', $material->type) === 'link')>Tautan</option>
+                    </select>
+                </div>
 
-            <div>
-                <label for="description">Deskripsi</label>
-                <textarea id="description" name="description" rows="4">{{ old('description', $material->description) }}</textarea>
-            </div>
+                <div class="field">
+                    <label for="description">Deskripsi</label>
+                    <textarea id="description" name="description" rows="4" class="input">{{ old('description', $material->description) }}</textarea>
+                </div>
 
-            <div data-material-link>
-                <label for="external_url">URL (untuk tautan)</label>
-                <input type="url" id="external_url" name="external_url" value="{{ old('external_url', $material->external_url) }}" placeholder="https://example.com">
-            </div>
+                <div class="field" data-material-link>
+                    <label for="external_url">URL (untuk tautan)</label>
+                    <input type="url" id="external_url" name="external_url" class="input {{ $errors->has('external_url') ? 'is-invalid' : '' }}" value="{{ old('external_url', $material->external_url) }}" placeholder="https://example.com">
+                </div>
 
-            <div data-material-file>
-                @if ($material->original_name)
-                    <p>Berkas saat ini: {{ $material->original_name }}</p>
-                @endif
-                <label for="file">Ganti berkas materi (PDF, Word, PowerPoint, Excel, TXT, atau ZIP; maksimal 20 MB)</label>
-                <input type="file" id="file" name="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.zip">
-            </div>
+                <div class="field" data-material-file>
+                    @if ($material->original_name)
+                        <span class="help-text"><x-icon name="file-text" class="icon-sm" /> Berkas saat ini: <strong>{{ $material->original_name }}</strong></span>
+                    @endif
+                    <label for="file">Ganti berkas materi</label>
+                    <input type="file" id="file" name="file" class="input {{ $errors->has('file') ? 'is-invalid' : '' }}" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.zip">
+                    <span class="help-text">Format: PDF, Word, PowerPoint, Excel, TXT, atau ZIP; maksimal 20 MB.</span>
+                </div>
 
-            <div style="display: flex; gap: 12px;">
-                <button type="submit">Perbarui Materi</button>
-                <a href="{{ route($courseRoute, $course) }}" style="display: inline-flex; align-items: center; padding: 10px 20px; border-radius: 980px; font-size: 14px; color: #1D1D1F; border: 1px solid #E5E5EA; text-decoration: none;">
-                    Batal
-                </a>
-            </div>
-        </form>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <x-icon name="check" class="icon-sm" /> Perbarui Materi
+                    </button>
+                    <a href="{{ route($courseRoute, $course) }}" class="btn btn-secondary">Batal</a>
+                </div>
+            </form>
+        </div>
     </div>
     <script>
         const typeSelect = document.getElementById('type');
