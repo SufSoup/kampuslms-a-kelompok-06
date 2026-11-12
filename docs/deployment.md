@@ -80,7 +80,6 @@ Buka tab **Variables** pada service `kampuslms-web` dan buka **Raw Editor**. Tem
 ```dotenv
 APP_NAME=KampusLMS
 APP_ENV=production
-APP_KEY=base64:dkW7OW8BI8WEcDgvCy8iozOMvjPCzA3ho5Tl1JZG5LI=
 APP_DEBUG=false
 APP_URL=https://${{RAILWAY_PUBLIC_DOMAIN}}
 
@@ -110,7 +109,11 @@ SESSION_DOMAIN=null
 SESSION_SECURE_COOKIE=true
 ```
 
-*Verifikasi:* Pastikan `APP_DEBUG=false`, `APP_ENV=production`, dan `SESSION_SECURE_COOKIE=true`.
+Generate `APP_KEY` khusus produksi dengan `cd lms && php artisan key:generate --show`, lalu masukkan hasilnya langsung ke Railway Variables. Jangan menaruh nilainya di dokumen atau commit. Jika key yang pernah tercantum di versi sebelumnya sudah digunakan di produksi, rotasi key Railway.
+
+Sebelum seeding pertama, atur `DEMO_ADMIN_PASSWORD`, `DEMO_LECTURER_PASSWORD`, `DEMO_LECTURER_2_PASSWORD`, `DEMO_STUDENT_PASSWORD`, dan `DEMO_IDOR_STUDENT_PASSWORD` di Railway Variables. Nilai admin, dosen demo, dan mahasiswa demo harus sama dengan kredensial pada §6.4; gunakan password privat tersendiri untuk dosen kedua dan akun IDOR. Seeder produksi akan berhenti dengan error jika password yang dibutuhkan belum dikonfigurasi. Jangan gunakan password lokal dari `.env.example` di Railway.
+
+*Verifikasi:* Pastikan `APP_DEBUG=false`, `APP_ENV=production`, `SESSION_SECURE_COOKIE=true`, dan semua variabel password demo telah diisi sebelum seeding.
 
 ### Langkah 5: Persistent Storage Volume
 1. Buka service `kampuslms-web` > tab **Volumes**.
@@ -337,7 +340,7 @@ Berikut adalah 5 masalah teknis nyata yang dihadapi tim selama proses penyusunan
 - **Gejala:** Container deployment di Railway gagal menyala dan masuk ke siklus crash (*restarting loop*). Log container mencatat:
   `[core:emerg] [pid 1] AH00534: Configuration Error: More than one MPM loaded.`
 - **Akar Masalah:**
-  Pada image dasar `php:8.3-apache` berbasis Debian Bookworm, modul multi-processing `mpm_event` aktif secara default. Ketika baris `RUN a2enmod mpm_prefork` dijalankan, Debian menyisakan link konfigurasi untuk kedua MPM secara simultan. Apache menolak menyala jika terdapat lebih dari satu modul MPM yang termuat.
+  Pada image dasar `php:8.4-apache` berbasis Debian Bookworm, modul multi-processing `mpm_event` aktif secara default. Ketika baris `RUN a2enmod mpm_prefork` dijalankan, Debian menyisakan link konfigurasi untuk kedua MPM secara simultan. Apache menolak menyala jika terdapat lebih dari satu modul MPM yang termuat.
 - **Solusi:**
   Membersihkan seluruh symlink MPM event dan worker sebelum mengaktifkan `mpm_prefork` di Dockerfile dan script entrypoint CMD:
   ```dockerfile
@@ -472,6 +475,8 @@ Pengujian otorisasi dijalankan langsung terhadap URL server produksi:
 APP_URL=https://kampuslms-a-06-production.up.railway.app ./scripts/test-authz.sh
 ```
 
+Sebelum menjalankan skrip, sediakan environment variables `AUTHZ_ADMIN_PASSWORD`, `AUTHZ_LECTURER_PASSWORD`, `AUTHZ_LECTURER_2_PASSWORD`, `AUTHZ_STUDENT_PASSWORD`, dan `AUTHZ_IDOR_STUDENT_PASSWORD` dari secret Railway untuk akun uji yang sesuai. Skrip sengaja tidak memiliki password default agar tidak mengirim kredensial `password` ke produksi. Jangan menaruh nilainya di command yang disimpan, log, atau dokumentasi.
+
 **Keluaran Konsol Riil:**
 ```text
 [INFO] Menguji endpoint sebagai guest...
@@ -505,7 +510,7 @@ APP_URL=https://kampuslms-a-06-production.up.railway.app ./scripts/test-authz.sh
 
 ### 6.4 Akun Demo Produksi untuk Penguji / Dosen
 
-Sesuai ketentuan Modul Praktikum baris 512, kata sandi produksi dicatat dalam dokumen ini (yang dapat diakses penguji) dan **bukan** pada file `README.md` publik:
+Sesuai ketentuan Modul Praktikum baris 512, kata sandi akun demo produksi dicatat di dokumen ini agar mudah diakses penguji. Akun ini khusus demonstrasi; jangan gunakan kata sandinya untuk akun pribadi atau layanan lain:
 
 | Peran | Email Akun | Kata Sandi Produksi | Hak Akses Utama |
 |---|---|---|---|
@@ -517,18 +522,20 @@ Sesuai ketentuan Modul Praktikum baris 512, kata sandi produksi dicatat dalam do
 
 ## 7. Pengujian Lintas Perangkat (Cross-Device Mobile Testing)
 
-Pengujian end-to-end dilakukan menggunakan smartphone nyata (Apple iPhone / iOS Safari dan Android Chrome) menggunakan koneksi data seluler 4G/5G publik (di luar jaringan lokal pengembang):
+Catat hasil hanya setelah pengujian dilakukan pada perangkat nyata menggunakan koneksi data seluler di luar Wi-Fi lokal. Status di bawah tetap `[PENDING]` sampai Yusuf mengisi hasil, jenis perangkat/browser, tanggal uji, dan melampirkan screenshot bukti.
 
 ### 7.1 Matriks Skenario Uji Mobile
 
 | Skenario | Langkah Pengujian | Hasil Pengamatan | Status |
 |---|---|---|:---:|
-| **Responsivitas Antarmuka** | Membuka halaman login dan dashboard dari layar berukuran 375px–414px | Tata letak fluid, form input terpusat, tidak ada horizontal scrollbar | [PASS] |
-| **Autentikasi Akun** | Login sebagai mahasiswa via koneksi seluler | Berhasil redirect ke dashboard dalam 1.2 detik via HTTPS | [PASS] |
-| **Akses Bahan Ajar** | Membuka detail MK dan melihat daftar materi kuliah | Materi file dan tautan terbuka rapi, tombol aksi terjangkau sentuhan | [PASS] |
-| **Download Dokumen** | Mengklik tautan unduhan bahan ajar perkuliahan | File PDF/ZIP terunduh langsung ke storage smartphone pengguna | [PASS] |
-| **Unggah Submission Tugas** | Menekan tombol "Pilih Berkas" pada form tugas, memilih PDF dari file manager HP | File terpilih (misal: 2.4 MB), form terkirim sukses, status berubah menjadi "Terkumpul" | [PASS] |
-| **Fitur 17 (Penanda Baca)** | Menekan tombol "Tandai Sudah Dibaca" pada sumber belajar kurasi | Status baca berubah instan, counter pembaca ter-update | [PASS] |
+| **Responsivitas Antarmuka** | Buka halaman login dan dashboard pada smartphone | Catat ukuran layar, tampilan, dan ada/tidaknya horizontal scrollbar | [PENDING] |
+| **Autentikasi Akun** | Login sebagai mahasiswa melalui koneksi seluler | Catat apakah login berhasil dan halaman tujuan | [PENDING] |
+| **Akses Bahan Ajar** | Buka detail mata kuliah dan daftar materi | Catat tampilan materi dan tautan pada perangkat | [PENDING] |
+| **Download Dokumen** | Unduh bahan ajar dari halaman materi | Catat apakah berkas benar-benar tersimpan dan dapat dibuka | [PENDING] |
+| **Unggah Submission Tugas** | Pilih PDF dari file manager HP dan kirim submission | Catat ukuran berkas, respons aplikasi, dan status submission | [PENDING] |
+| **Fitur 17 (Penanda Baca)** | Tandai sumber belajar sebagai sudah dibaca | Catat perubahan status dan counter yang terlihat | [PENDING] |
+
+Lampirkan screenshot autentikasi, materi, unduhan, dan submission pada direktori bukti Minggu 12. Jangan sertakan kata sandi, token, cookie, atau data pribadi mahasiswa di screenshot.
 
 ---
 

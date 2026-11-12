@@ -51,7 +51,7 @@ COPY . .
 COPY --from=frontend /app/public/build ./public/build
 
 # Install PHP production dependencies without dev packages
-RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
+RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # Set permissions for storage and cache directories
 RUN chown -R www-data:www-data storage bootstrap/cache \
