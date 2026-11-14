@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP_URL="${APP_URL:-http://127.0.0.1:8000}"
+APP_URL="${APP_URL:-https://kampuslms-a-kelompok-06-production.up.railway.app}"
 APP_URL="${APP_URL%/}"
 AUTHZ_ADMIN_PASSWORD="${AUTHZ_ADMIN_PASSWORD:-}"
 AUTHZ_LECTURER_PASSWORD="${AUTHZ_LECTURER_PASSWORD:-}"
@@ -9,7 +9,22 @@ AUTHZ_LECTURER_2_PASSWORD="${AUTHZ_LECTURER_2_PASSWORD:-}"
 AUTHZ_STUDENT_PASSWORD="${AUTHZ_STUDENT_PASSWORD:-}"
 AUTHZ_IDOR_STUDENT_PASSWORD="${AUTHZ_IDOR_STUDENT_PASSWORD:-}"
 TMP_DIR="$(mktemp -d)"
-trap 'rm -rf "$TMP_DIR"' EXIT
+
+cleanup() {
+    for token_file in "$TMP_DIR"/*-api.token; do
+        [[ -f "$token_file" ]] || continue
+
+        curl --silent --show-error --output /dev/null \
+            --request POST \
+            --header "Accept: application/json" \
+            --header "Authorization: Bearer $(cat "$token_file")" \
+            "$APP_URL/api/v1/auth/logout" || true
+    done
+
+    rm -rf "$TMP_DIR"
+}
+
+trap cleanup EXIT
 
 fail() {
     echo "[FAIL] $*" >&2
@@ -23,7 +38,11 @@ for password_name in \
     AUTHZ_STUDENT_PASSWORD \
     AUTHZ_IDOR_STUDENT_PASSWORD
 do
-    [[ -n "${!password_name}" ]] || fail "Set $password_name in the environment before running this audit."
+    if [[ -z "${!password_name:-}" ]]; then
+        read -r -s -p "Masukkan password ${password_name}: " "$password_name"
+        printf '\n'
+        export "$password_name"
+    fi
 done
 
 expect_status() {
@@ -49,9 +68,16 @@ expect_guest_status() {
     local expected="$2"
     local path="$3"
     local actual
+    local headers=()
+
+    if [[ "$path" == /api/* ]]; then
+        headers+=(--header "Accept: application/json")
+    fi
 
     actual="$(curl --silent --show-error --output "$TMP_DIR/guest-response.html" \
-        --write-out '%{http_code}' "$APP_URL$path")"
+        --write-out '%{http_code}' \
+        "${headers[@]}" \
+        "$APP_URL$path")"
 
     if [[ "$actual" != "$expected" ]]; then
         fail "$label: diharapkan HTTP $expected, didapat HTTP $actual ($path)"
