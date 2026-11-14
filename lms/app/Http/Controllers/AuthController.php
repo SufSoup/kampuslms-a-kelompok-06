@@ -60,11 +60,9 @@ class AuthController extends Controller
     {
         $request->validate(['email' => ['required', 'email']]);
 
-        $status = Password::sendResetLink($request->only('email'));
+        Password::sendResetLink($request->only('email'));
 
-        return $status === Password::RESET_LINK_SENT
-            ? back()->with('success', 'Tautan untuk mereset kata sandi telah dikirim ke email Anda.')
-            : back()->withErrors(['email' => 'Kami tidak dapat menemukan pengguna dengan alamat email tersebut.']);
+        return back()->with('success', 'Jika email terdaftar, tautan reset kata sandi akan dikirim.');
     }
 
     public function showResetPasswordForm(Request $request, string $token): View
