@@ -128,9 +128,11 @@
                                 <p class="item-desc">{{ $resource->description }}</p>
                             @endif
 
-                            <div class="item-meta">
-                                <span><x-icon name="check-circle" class="icon-sm" /> {{ $resource->readers->count() }} mahasiswa telah menandai sudah membaca</span>
-                            </div>
+                            @if (auth()->user()->role !== 'mahasiswa')
+                                <div class="item-meta">
+                                    <span><x-icon name="check-circle" class="icon-sm" /> {{ $resource->readers->count() }} mahasiswa telah menandai sudah membaca</span>
+                                </div>
+                            @endif
                         </div>
 
                         <div class="item-actions">
