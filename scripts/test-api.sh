@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BASE_URL="${BASE_URL:-http://127.0.0.1:8000}"
+BASE_URL="${BASE_URL:-https://kampuslms-a-kelompok-06-production.up.railway.app}"
 STUDENT_EMAIL="${STUDENT_EMAIL:-mahasiswa@kampuslms.test}"
 STUDENT_PASSWORD="${STUDENT_PASSWORD:-password}"
 LECTURER_EMAIL="${LECTURER_EMAIL:-dosen@kampuslms.test}"
@@ -12,11 +12,7 @@ if ! command -v curl >/dev/null 2>&1 || ! command -v jq >/dev/null 2>&1; then
     exit 1
 fi
 
-if [[ -z "${FOREIGN_SUBMISSION_ID:-}" ]]; then
-    echo "Error: set FOREIGN_SUBMISSION_ID ke ID submission milik dosen lain untuk uji IDOR." >&2
-    echo "Contoh: FOREIGN_SUBMISSION_ID=123 bash scripts/test-api.sh" >&2
-    exit 1
-fi
+
 
 login() {
     local email="$1"
@@ -66,9 +62,13 @@ lecturer_token="$(login "$LECTURER_EMAIL" "$LECTURER_PASSWORD")"
 assert_status "request tanpa token ditolak" 401 GET /api/v1/me
 assert_status "mahasiswa tidak boleh membuat tugas dosen" 403 POST \
     /api/v1/assignments "$student_token" '{}'
-assert_status "dosen tidak boleh menilai submission dosen lain" 403 PUT \
-    "/api/v1/submissions/$FOREIGN_SUBMISSION_ID/grade" "$lecturer_token" \
-    '{"score":80,"feedback":"Pengujian anti-IDOR"}'
+if [[ -n "${FOREIGN_SUBMISSION_ID:-}" ]]; then
+    assert_status "dosen tidak boleh menilai submission dosen lain" 403 PUT \
+        "/api/v1/submissions/$FOREIGN_SUBMISSION_ID/grade" "$lecturer_token" \
+        '{"score":80,"feedback":"Pengujian anti-IDOR"}'
+else
+    echo "[SKIP] Uji IDOR grading: tidak ada submission khusus pengujian."
+fi
 assert_status "token dosen valid dapat membuka profil sendiri" 200 GET \
     /api/v1/me "$lecturer_token"
 

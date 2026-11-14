@@ -13,6 +13,13 @@ class PasswordResetTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->withoutVite();
+    }
+
     public function test_forgot_password_screen_can_be_rendered(): void
     {
         $response = $this->get('/forgot-password');
@@ -31,19 +38,26 @@ class PasswordResetTest extends TestCase
             'email' => $user->email,
         ]);
 
-        $response->assertSessionHas('success');
+        $response->assertSessionHas(
+            'success',
+            'Jika email terdaftar, tautan reset kata sandi akan dikirim.'
+        );
         $this->assertDatabaseHas('password_reset_tokens', [
             'email' => $user->email,
         ]);
     }
 
-    public function test_reset_password_link_fails_for_unknown_email(): void
+    public function test_reset_password_link_response_does_not_reveal_unknown_email(): void
     {
         $response = $this->post('/forgot-password', [
             'email' => 'unknown@kampuslms.test',
         ]);
 
-        $response->assertSessionHasErrors('email');
+        $response->assertSessionHas(
+            'success',
+            'Jika email terdaftar, tautan reset kata sandi akan dikirim.'
+        );
+        $response->assertSessionDoesntHaveErrors('email');
     }
 
     public function test_reset_password_screen_can_be_rendered(): void

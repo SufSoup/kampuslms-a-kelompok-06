@@ -79,7 +79,17 @@ class CourseController extends Controller
 
         Gate::authorize('view', $course);
 
-        $course->load(['lecturer', 'learningResources.readers', 'materials']);
+        $course->load([
+            'lecturer',
+            'learningResources' => function ($query) use ($user) {
+                $query->with(['readers' => function ($readerQuery) use ($user) {
+                    if ($user->role === 'mahasiswa') {
+                        $readerQuery->whereKey($user->id);
+                    }
+                }]);
+            },
+            'materials',
+        ]);
         $availableStudents = collect();
 
         if ($user && $user->role === 'admin') {

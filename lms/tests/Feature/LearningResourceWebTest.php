@@ -12,6 +12,13 @@ class LearningResourceWebTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->withoutVite();
+    }
+
     public function test_lecturer_can_view_create_resource_page_for_their_course(): void
     {
         $lecturer = User::factory()->dosen()->create();
@@ -88,6 +95,86 @@ class LearningResourceWebTest extends TestCase
             'learning_resource_id' => $resource->id,
             'user_id' => $student->id,
         ]);
+    }
+
+    public function test_student_sees_only_their_own_read_status_not_the_course_total(): void
+    {
+        $lecturer = User::factory()->dosen()->create();
+        $student = User::factory()->mahasiswa()->create();
+        $otherStudent = User::factory()->mahasiswa()->create();
+        $course = Course::factory()->create(['lecturer_id' => $lecturer->id]);
+        $course->students()->attach([$student->id, $otherStudent->id], ['enrolled_at' => now()]);
+        $resource = LearningResource::factory()->create(['course_id' => $course->id]);
+        $resource->readers()->attach([$student->id, $otherStudent->id]);
+
+        $response = $this->actingAs($student)
+            ->get(route('mahasiswa.courses.show', $course));
+
+        $response->assertOk()
+            ->assertSee('Sudah Dibaca')
+            ->assertDontSee('mahasiswa telah menandai sudah membaca');
+    }
+
+    public function test_student_response_and_view_data_do_not_expose_other_reader_identity(): void
+    {
+        $lecturer = User::factory()->dosen()->create();
+        $student = User::factory()->mahasiswa()->create();
+        $otherStudent = User::factory()->mahasiswa()->create([
+            'name' => 'Private Reader Identity Marker',
+            'email' => 'private.reader@kampuslms.test',
+        ]);
+        $course = Course::factory()->create(['lecturer_id' => $lecturer->id]);
+        $course->students()->attach([$student->id, $otherStudent->id], ['enrolled_at' => now()]);
+        $resource = LearningResource::factory()->create(['course_id' => $course->id]);
+        $resource->readers()->attach([$student->id, $otherStudent->id]);
+
+        $response = $this->actingAs($student)
+            ->get(route('mahasiswa.courses.show', $course));
+
+        $response->assertOk()
+            ->assertDontSee('Private Reader Identity Marker')
+            ->assertDontSee('private.reader@kampuslms.test')
+            ->assertViewHas('course', function (Course $viewCourse) use ($resource, $student, $otherStudent): bool {
+                $viewResource = $viewCourse->learningResources->firstWhere('id', $resource->id);
+
+                return $viewResource !== null
+                    && $viewResource->readers->contains('id', $student->id)
+                    && ! $viewResource->readers->contains('id', $otherStudent->id)
+                    && $viewResource->readers->count() === 1;
+            });
+    }
+
+    public function test_lecturer_can_still_see_the_course_read_total(): void
+    {
+        $lecturer = User::factory()->dosen()->create();
+        $student = User::factory()->mahasiswa()->create();
+        $otherStudent = User::factory()->mahasiswa()->create();
+        $course = Course::factory()->create(['lecturer_id' => $lecturer->id]);
+        $resource = LearningResource::factory()->create(['course_id' => $course->id]);
+        $resource->readers()->attach([$student->id, $otherStudent->id]);
+
+        $response = $this->actingAs($lecturer)
+            ->get(route('dosen.courses.show', $course));
+
+        $response->assertOk()
+            ->assertSee('2 mahasiswa telah menandai sudah membaca');
+    }
+
+    public function test_admin_can_see_the_course_read_total(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $student = User::factory()->mahasiswa()->create();
+        $otherStudent = User::factory()->mahasiswa()->create();
+        $course = Course::factory()->create();
+        $course->students()->attach([$student->id, $otherStudent->id], ['enrolled_at' => now()]);
+        $resource = LearningResource::factory()->create(['course_id' => $course->id]);
+        $resource->readers()->attach([$student->id, $otherStudent->id]);
+
+        $response = $this->actingAs($admin)
+            ->get(route('admin.courses.show', $course));
+
+        $response->assertOk()
+            ->assertSee('2 mahasiswa telah menandai sudah membaca');
     }
 
     public function test_unenrolled_student_cannot_toggle_read_status_anti_idor(): void
