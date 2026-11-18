@@ -23,7 +23,7 @@ Syahid, dan Farraz masuk ke `dev`). Kolom **Sesudah** diukur pada commit `bc1d90
 | Detail mata kuliah | 5 | 5 | — | Tidak berubah (sudah optimal) |
 | Daftar tugas | 6 | 6 | — | Tidak berubah (sudah optimal) |
 | Daftar pengumpulan (dosen) | 6 | 9 | +3 | `->get()` → `->paginate(25)` + 2 COUNT terpisah; tradeoff wajar: query naik tapi tidak load seluruh tabel ke memori |
-| Rekap nilai | 9 | 9 | — | Sudah pakai `with([...])` + `paginate(25)` sejak awal; target < 15 ✓ |
+| Rekap nilai | 9 | 9 | — | Sudah pakai `with([...])` + `paginate(25)` sejak awal; target < 15 [PASS] |
 | Dashboard mahasiswa | 6 | 6 | — | Tidak berubah |
 | Dashboard dosen | 2 | 2 (cache hit: 0) | ↓ | Cache hit ke-2+: 0 query ke database — statistik diambil dari `Cache::remember` |
 
