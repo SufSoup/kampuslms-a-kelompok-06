@@ -3,85 +3,176 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="KampusLMS — portal Learning Management System untuk kelola mata kuliah, materi, dan tugas.">
     <title>{{ $title ?? 'KampusLMS' }}</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%230071E3'/%3E%3Cpath d='M19 11.5 12 8l-7 3.5 7 3.5 7-3.5z' fill='%23ffffff'/%3E%3Cpath d='M9.5 13.9V16c0 1.25 1.9 2.25 2.5 2.25s2.5-1 2.5-2.25v-2.1L12 14.8z' fill='%23ffffff'/%3E%3C/svg%3E">
     @vite(['resources/css/app.css'])
 </head>
 <body>
-    <nav style="display: flex; justify-content: space-between; align-items: center; padding: 16px 48px; background: #F5F5F7; border-bottom: 1px solid #E0E0E0;">
-        <div style="display: flex; gap: 24px; align-items: center;">
-            <a href="{{ url('/') }}" style="font-weight: 700; font-size: 16px;">KampusLMS</a>
-            <a href="{{ route('tentang') }}">Tentang</a>
+    <header class="app-navbar">
+        <div class="navbar-inner">
+            <a href="{{ url('/') }}" class="brand">
+                <span class="brand-mark"><x-icon name="graduation" class="icon" /></span>
+                KampusLMS
+            </a>
 
+            <nav class="nav-links" aria-label="Navigasi utama">
+                @auth
+                    <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                        <x-icon name="home" class="icon-sm" /> Dashboard
+                    </a>
+
+                    @if (auth()->user()->role === 'admin')
+                        <a href="{{ route('admin.courses.index') }}" class="nav-link {{ request()->routeIs('admin.courses.*', 'admin.materials.*') ? 'active' : '' }}">
+                            <x-icon name="book" class="icon-sm" /> Mata Kuliah
+                        </a>
+                        <a href="{{ route('admin.users.index') }}" class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+                            <x-icon name="users" class="icon-sm" /> Pengguna
+                        </a>
+                    @elseif (auth()->user()->role === 'dosen')
+                        <a href="{{ route('dosen.courses.index') }}" class="nav-link {{ request()->routeIs('dosen.courses.*', 'dosen.materials.*') ? 'active' : '' }}">
+                            <x-icon name="book" class="icon-sm" /> Mata Kuliah
+                        </a>
+                        <a href="{{ route('dosen.assignments.index') }}" class="nav-link {{ request()->routeIs('dosen.assignments.*', 'dosen.submissions.*') ? 'active' : '' }}">
+                            <x-icon name="clipboard" class="icon-sm" /> Tugas
+                        </a>
+                    @elseif (auth()->user()->role === 'mahasiswa')
+                        <a href="{{ route('mahasiswa.courses.index') }}" class="nav-link {{ request()->routeIs('mahasiswa.courses.*', 'mahasiswa.materials.*') ? 'active' : '' }}">
+                            <x-icon name="book" class="icon-sm" /> Mata Kuliah
+                        </a>
+                        <a href="{{ route('mahasiswa.assignments.index') }}" class="nav-link {{ request()->routeIs('mahasiswa.assignments.*', 'mahasiswa.submissions.*') ? 'active' : '' }}">
+                            <x-icon name="clipboard" class="icon-sm" /> Tugas
+                        </a>
+                    @endif
+                @endauth
+
+                <a href="{{ route('tentang') }}" class="nav-link {{ request()->routeIs('tentang') ? 'active' : '' }}">
+                    <x-icon name="info" class="icon-sm" /> Tentang
+                </a>
+            </nav>
+
+            <div class="navbar-right">
+                @auth
+                    @php($unreadNotificationCount = auth()->user()->unreadNotifications()->count())
+                    <a href="{{ route('notifications.index') }}" class="nav-bell"
+                        aria-label="Notifikasi, {{ $unreadNotificationCount }} belum dibaca">
+                        <x-icon name="bell" class="icon" />
+                        <span class="bell-badge" data-notification-unread-count="{{ $unreadNotificationCount }}" aria-live="polite" @if ($unreadNotificationCount === 0) hidden @endif>
+                            {{ $unreadNotificationCount }}
+                        </span>
+                    </a>
+
+                    <div class="user-meta">
+                        <span class="badge badge-{{ auth()->user()->role }}">{{ ucfirst(auth()->user()->role) }}</span>
+                        <span class="user-name">{{ auth()->user()->name }}</span>
+                    </div>
+
+                    <form method="POST" action="{{ route('logout') }}" style="margin: 0;">
+                        @csrf
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            <x-icon name="logout" class="icon-sm" /> Keluar
+                        </button>
+                    </form>
+                @else
+                    <a href="{{ route('login') }}" class="btn btn-primary btn-sm">Masuk</a>
+                @endauth
+
+                <button type="button" class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="mobile-menu" aria-label="Buka menu navigasi">
+                    <x-icon name="menu" class="icon" data-icon-open />
+                    <x-icon name="x" class="icon" data-icon-close hidden />
+                </button>
+            </div>
+        </div>
+
+        <nav class="mobile-menu" id="mobile-menu" aria-label="Navigasi mobile">
             @auth
+                <a href="{{ route('dashboard') }}" class="mobile-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                    <x-icon name="home" class="icon-sm" /> Dashboard
+                </a>
                 @if (auth()->user()->role === 'admin')
-                    <a href="{{ route('admin.courses.index') }}">Mata Kuliah</a>
-                    <a href="{{ route('admin.users.index') }}">Pengguna</a>
+                    <a href="{{ route('admin.courses.index') }}" class="mobile-link {{ request()->routeIs('admin.courses.*', 'admin.materials.*') ? 'active' : '' }}">
+                        <x-icon name="book" class="icon-sm" /> Mata Kuliah
+                    </a>
+                    <a href="{{ route('admin.users.index') }}" class="mobile-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+                        <x-icon name="users" class="icon-sm" /> Pengguna
+                    </a>
                 @elseif (auth()->user()->role === 'dosen')
-                    <a href="{{ route('dosen.courses.index') }}">Mata Kuliah</a>
-                    <a href="{{ route('dosen.assignments.index') }}">Tugas</a>
+                    <a href="{{ route('dosen.courses.index') }}" class="mobile-link {{ request()->routeIs('dosen.courses.*', 'dosen.materials.*') ? 'active' : '' }}">
+                        <x-icon name="book" class="icon-sm" /> Mata Kuliah
+                    </a>
+                    <a href="{{ route('dosen.assignments.index') }}" class="mobile-link {{ request()->routeIs('dosen.assignments.*', 'dosen.submissions.*') ? 'active' : '' }}">
+                        <x-icon name="clipboard" class="icon-sm" /> Tugas
+                    </a>
                 @elseif (auth()->user()->role === 'mahasiswa')
-                    <a href="{{ route('mahasiswa.courses.index') }}">Mata Kuliah</a>
-                    <a href="{{ route('mahasiswa.assignments.index') }}">Tugas</a>
+                    <a href="{{ route('mahasiswa.courses.index') }}" class="mobile-link {{ request()->routeIs('mahasiswa.courses.*', 'mahasiswa.materials.*') ? 'active' : '' }}">
+                        <x-icon name="book" class="icon-sm" /> Mata Kuliah
+                    </a>
+                    <a href="{{ route('mahasiswa.assignments.index') }}" class="mobile-link {{ request()->routeIs('mahasiswa.assignments.*', 'mahasiswa.submissions.*') ? 'active' : '' }}">
+                        <x-icon name="clipboard" class="icon-sm" /> Tugas
+                    </a>
                 @endif
-                <a href="{{ route('dashboard') }}">Dashboard</a>
-            @endauth
-        </div>
-
-        <div style="display: flex; gap: 16px; align-items: center;">
-            @auth
-                @php($unreadNotificationCount = auth()->user()->unreadNotifications()->count())
-                <a href="{{ route('notifications.index') }}"
-                    aria-label="Notifikasi, {{ $unreadNotificationCount }} belum dibaca"
-                    style="display: inline-flex; align-items: center; gap: 6px; color: #1D1D1F; text-decoration: none;">
-                    <span aria-hidden="true" style="font-size: 18px;">🔔</span>
-                    <span data-notification-unread-count="{{ $unreadNotificationCount }}" aria-live="polite" @if ($unreadNotificationCount === 0) hidden @endif
-                        style="min-width: 20px; padding: 2px 6px; border-radius: 999px; background: #DC2626; color: #FFFFFF; font-size: 12px; font-weight: 700; text-align: center;">
-                        {{ $unreadNotificationCount }}
-                    </span>
-                </a>
-
-                <div style="display: flex; align-items: center; gap: 10px; font-size: 14px;">
-                    <span style="display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; background: #E5E5EA; color: #1D1D1F;">
-                        {{ auth()->user()->role }}
-                    </span>
-                    <span style="font-weight: 500;">{{ auth()->user()->name }}</span>
-                </div>
-
-                <form method="POST" action="{{ route('logout') }}" style="margin: 0; display: inline;">
-                    @csrf
-                    <button type="submit" style="background: transparent; color: #FF3B30; border: 1px solid #FF3B30; padding: 6px 14px; border-radius: 980px; font-size: 13px;">
-                        Keluar
-                    </button>
-                </form>
-            @else
-                <a href="{{ route('login') }}" style="display: inline-block; background: #000000; color: #FFFFFF; border-radius: 980px; padding: 8px 20px; font-size: 14px; text-decoration: none; border-bottom: none;">
-                    Masuk
+                <div class="mobile-divider"></div>
+                <a href="{{ route('notifications.index') }}" class="mobile-link {{ request()->routeIs('notifications.*') ? 'active' : '' }}">
+                    <x-icon name="bell" class="icon-sm" /> Notifikasi
+                    @if (($unreadNotificationCount ?? 0) > 0)
+                        <span class="badge badge-danger">{{ $unreadNotificationCount }}</span>
+                    @endif
                 </a>
             @endauth
-        </div>
-    </nav>
+            <a href="{{ route('tentang') }}" class="mobile-link {{ request()->routeIs('tentang') ? 'active' : '' }}">
+                <x-icon name="info" class="icon-sm" /> Tentang
+            </a>
+        </nav>
+    </header>
 
-    <main>
+    <main class="container">
         @if (session('success'))
             <div class="alert alert-success" role="alert">
-                {{ session('success') }}
+                <x-icon name="check-circle" class="icon" />
+                <div>{{ session('success') }}</div>
             </div>
         @endif
 
         @if (session('error'))
             <div class="alert alert-danger" role="alert">
-                {{ session('error') }}
+                <x-icon name="alert-circle" class="icon" />
+                <div>{{ session('error') }}</div>
             </div>
         @endif
 
         @if (session('warning'))
             <div class="alert alert-warning" role="alert">
-                {{ session('warning') }}
+                <x-icon name="alert-triangle" class="icon" />
+                <div>{{ session('warning') }}</div>
             </div>
         @endif
 
         {{ $slot }}
     </main>
+
+    <footer class="app-footer">
+        <div class="footer-inner">
+            <span>&copy; {{ date('Y') }} KampusLMS — Kelompok 06 (Kelas A)</span>
+            <a href="{{ route('tentang') }}">Tentang Kelompok</a>
+        </div>
+    </footer>
+
+    <script>
+        (function () {
+            var toggle = document.getElementById('nav-toggle');
+            var menu = document.getElementById('mobile-menu');
+            if (!toggle || !menu) return;
+            var openIcon = toggle.querySelector('[data-icon-open]');
+            var closeIcon = toggle.querySelector('[data-icon-close]');
+            toggle.addEventListener('click', function () {
+                var open = menu.classList.toggle('open');
+                toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+                toggle.setAttribute('aria-label', open ? 'Tutup menu navigasi' : 'Buka menu navigasi');
+                if (openIcon) openIcon.hidden = open;
+                if (closeIcon) closeIcon.hidden = !open;
+            });
+        })();
+    </script>
 
     @auth
         <script>

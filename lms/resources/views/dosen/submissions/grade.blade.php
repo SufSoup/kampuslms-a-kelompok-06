@@ -1,49 +1,86 @@
-<x-layout title="Penilaian - {{ $submission->assignment->title }}">
-    <h1>Penilaian Tugas</h1>
-    <p>Tugas: {{ $submission->assignment->title }}</p>
-    <p>Mata kuliah: {{ $submission->assignment->course->name }} ({{ $submission->assignment->course->code }})</p>
-    <p>Mahasiswa: {{ $submission->student->name }}</p>
-    <p>Nilai maksimum: {{ $submission->assignment->max_score }}</p>
+<x-layout title="Penilaian — {{ $submission->assignment->title }}">
+    <div class="breadcrumb">
+        <a href="{{ route('dosen.assignments.submissions.index', $submission->assignment) }}">
+            <x-icon name="arrow-left" class="icon-sm" /> Monitoring Pengumpulan
+        </a>
+    </div>
+
+    <div class="page-header">
+        <h1 class="page-title">Penilaian Tugas</h1>
+        <p class="page-desc">{{ $submission->assignment->title }} &mdash; {{ $submission->assignment->course->name }} ({{ $submission->assignment->course->code }})</p>
+    </div>
+
+    <div class="profile-card">
+        <div class="detail-grid">
+            <div class="detail-item">
+                <p class="detail-label">Mahasiswa</p>
+                <p class="detail-value">{{ $submission->student->name }}</p>
+            </div>
+            <div class="detail-item">
+                <p class="detail-label">Nilai Maksimum</p>
+                <p class="detail-value">{{ $submission->assignment->max_score }}</p>
+            </div>
+            <div class="detail-item">
+                <p class="detail-label">Status</p>
+                <p class="detail-value">
+                    @if ($submission->grade)
+                        <span class="badge badge-primary">Sudah dinilai</span>
+                    @else
+                        <span class="badge badge-warning">Belum dinilai</span>
+                    @endif
+                </p>
+            </div>
+        </div>
+    </div>
 
     @if ($errors->any())
-        <div role="alert" style="background: #FEE2E2; border: 1px solid #FCA5A5; color: #991B1B; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px;">
-            <ul style="margin: 0; padding-left: 20px;">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
+        <div class="alert alert-danger" role="alert">
+            <x-icon name="alert-circle" class="icon" />
+            <div>
+                <ul>
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
         </div>
     @endif
 
-    <form method="POST" action="{{ route('dosen.submissions.grade.store', $submission) }}" style="max-width: 600px;">
-        @csrf
-        <div style="margin-bottom: 16px;">
-            <label for="score" style="display: block; font-weight: bold; margin-bottom: 4px;">Nilai (0–{{ $submission->assignment->max_score }}):</label>
-            <input
-                type="number"
-                id="score"
-                name="score"
-                value="{{ old('score', $submission->grade?->score) }}"
-                min="0"
-                max="{{ $submission->assignment->max_score }}"
-                step="0.01"
-                required
-                style="width: 100%; border: 1px solid #CBD5E1; border-radius: 6px; padding: 8px;"
-            >
-            @error('score')
-                <p role="alert" style="color: #991B1B;">{{ $message }}</p>
-            @enderror
-        </div>
-        <div style="margin-bottom: 16px;">
-            <label for="feedback" style="display: block; font-weight: bold; margin-bottom: 4px;">Feedback dosen (opsional):</label>
-            <textarea id="feedback" name="feedback" rows="5" style="width: 100%; border: 1px solid #CBD5E1; border-radius: 6px; padding: 8px;">{{ old('feedback', $submission->grade?->feedback) }}</textarea>
-            @error('feedback')
-                <p role="alert" style="color: #991B1B;">{{ $message }}</p>
-            @enderror
-        </div>
-        <button type="submit" style="padding: 10px 20px; background: #0071E3; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
-            Simpan Nilai
-        </button>
-        <a href="{{ route('dosen.assignments.submissions.index', $submission->assignment) }}">Kembali ke monitoring</a>
-    </form>
+    <div class="card" style="max-width: 640px;">
+        <form method="POST" action="{{ route('dosen.submissions.grade.store', $submission) }}" class="form">
+            @csrf
+            <div class="field">
+                <label for="score">Nilai (0&ndash;{{ $submission->assignment->max_score }})</label>
+                <input
+                    type="number"
+                    id="score"
+                    name="score"
+                    class="input {{ $errors->has('score') ? 'is-invalid' : '' }}"
+                    value="{{ old('score', $submission->grade?->score) }}"
+                    min="0"
+                    max="{{ $submission->assignment->max_score }}"
+                    step="0.01"
+                    required
+                >
+                @error('score')
+                    <p class="field-error" role="alert">{{ $message }}</p>
+                @enderror
+            </div>
+            <div class="field">
+                <label for="feedback">Feedback dosen (opsional)</label>
+                <textarea id="feedback" name="feedback" rows="5" class="input {{ $errors->has('feedback') ? 'is-invalid' : '' }}">{{ old('feedback', $submission->grade?->feedback) }}</textarea>
+                @error('feedback')
+                    <p class="field-error" role="alert">{{ $message }}</p>
+                @enderror
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <x-icon name="check" class="icon-sm" /> Simpan Nilai
+                </button>
+                <a href="{{ route('dosen.assignments.submissions.index', $submission->assignment) }}" class="btn btn-secondary">
+                    Kembali ke monitoring
+                </a>
+            </div>
+        </form>
+    </div>
 </x-layout>

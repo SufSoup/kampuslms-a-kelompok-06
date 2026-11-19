@@ -1,60 +1,67 @@
 <x-layout title="Atur Ulang Kata Sandi — KampusLMS">
-    <div style="max-width: 480px; margin: 0 auto;">
-        <h1 style="font-size: 36px; margin-bottom: 8px;">Kata Sandi Baru</h1>
-        <p style="color: #6E6E73; margin-bottom: 32px;">
-            Tentukan kata sandi baru untuk akun KampusLMS Anda.
-        </p>
+    <div class="auth-box">
+        <div class="text-center" style="margin-bottom: 24px;">
+            <h1 class="page-title">Kata Sandi Baru</h1>
+            <p class="page-desc">Tentukan kata sandi baru untuk akun KampusLMS Anda.</p>
+        </div>
 
-        @if ($errors->any())
-            <div style="background: #FEE2E2; border: 1px solid #FCA5A5; color: #991B1B; padding: 12px 16px; border-radius: 12px; margin-bottom: 24px; font-size: 14px;">
-                @foreach ($errors->all() as $error)
-                    <div>{{ $error }}</div>
-                @endforeach
-            </div>
-        @endif
+        <div class="auth-card">
+            @if ($errors->any())
+                <div class="alert alert-danger" role="alert">
+                    <x-icon name="alert-circle" class="icon" />
+                    <div>
+                        @foreach ($errors->all() as $error)
+                            <div>{{ $error }}</div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
 
-        <form method="POST" action="{{ route('password.update') }}" style="max-width: 100%;">
-            @csrf
-            <input type="hidden" name="token" value="{{ $token }}">
+            <form method="POST" action="{{ route('password.update') }}" class="form">
+                @csrf
+                <input type="hidden" name="token" value="{{ $token }}">
 
-            <div>
-                <label for="email">Alamat Email</label>
-                <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value="{{ old('email', $email) }}"
-                    required
-                    readonly
-                >
-            </div>
+                <div class="field">
+                    <label for="email">Alamat Email</label>
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        class="input"
+                        value="{{ old('email', $email) }}"
+                        required
+                        readonly
+                    >
+                </div>
 
-            <div>
-                <label for="password">Kata Sandi Baru (Minimal 8 karakter)</label>
-                <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    required
-                    autofocus
-                    placeholder="••••••••"
-                >
-            </div>
+                <div class="field">
+                    <label for="password">Kata Sandi Baru</label>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        class="input {{ $errors->has('password') ? 'is-invalid' : '' }}"
+                        required
+                        autofocus
+                        placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;"
+                    >
+                    <span class="help-text">Minimal 8 karakter.</span>
+                </div>
 
-            <div>
-                <label for="password_confirmation">Konfirmasi Kata Sandi Baru</label>
-                <input
-                    type="password"
-                    id="password_confirmation"
-                    name="password_confirmation"
-                    required
-                    placeholder="••••••••"
-                >
-            </div>
+                <div class="field">
+                    <label for="password_confirmation">Konfirmasi Kata Sandi Baru</label>
+                    <input
+                        type="password"
+                        id="password_confirmation"
+                        name="password_confirmation"
+                        class="input {{ $errors->has('password_confirmation') ? 'is-invalid' : '' }}"
+                        required
+                        placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;"
+                    >
+                </div>
 
-            <button type="submit" style="width: 100%; padding: 12px 24px; font-size: 16px; margin-top: 16px;">
-                Simpan Kata Sandi Baru
-            </button>
-        </form>
+                <button type="submit" class="btn btn-primary btn-block">Simpan Kata Sandi Baru</button>
+            </form>
+        </div>
     </div>
 </x-layout>

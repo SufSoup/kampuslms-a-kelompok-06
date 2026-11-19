@@ -9,6 +9,7 @@ use App\Models\Submission;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -392,5 +393,83 @@ class GradingApiTest extends TestCase
                 'file' => UploadedFile::fake()->create('tugas.pdf', 100, 'application/pdf'),
             ], ['Accept' => 'application/json'])
             ->assertForbidden();
+    }
+
+    public function test_student_cannot_submit_after_deadline_when_late_submissions_are_disabled(): void
+    {
+        Storage::fake();
+        $student = User::factory()->mahasiswa()->create();
+        $course = Course::factory()->create();
+        $course->students()->attach($student->id, ['enrolled_at' => now()]);
+        $assignment = Assignment::factory()->create([
+            'course_id' => $course->id,
+            'due_at' => now()->subDay(),
+            'allow_late' => false,
+        ]);
+
+        $this->actingAs($student, 'sanctum')
+            ->postJson("/api/v1/assignments/{$assignment->id}/submissions", [
+                'file' => UploadedFile::fake()->create('tugas.pdf', 100, 'application/pdf'),
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('file');
+
+        $this->assertDatabaseMissing('submissions', [
+            'assignment_id' => $assignment->id,
+            'user_id' => $student->id,
+        ]);
+    }
+
+    public function test_student_can_submit_at_deadline_when_late_submissions_are_disabled(): void
+    {
+        Storage::fake();
+        $deadline = Carbon::parse('2026-11-13 12:00:00');
+        $this->travelTo($deadline);
+
+        $student = User::factory()->mahasiswa()->create();
+        $course = Course::factory()->create();
+        $course->students()->attach($student->id, ['enrolled_at' => now()]);
+        $assignment = Assignment::factory()->create([
+            'course_id' => $course->id,
+            'due_at' => $deadline,
+            'allow_late' => false,
+        ]);
+
+        $this->actingAs($student, 'sanctum')
+            ->postJson("/api/v1/assignments/{$assignment->id}/submissions", [
+                'file' => UploadedFile::fake()->create('tugas.pdf', 100, 'application/pdf'),
+            ])
+            ->assertCreated();
+
+        $this->assertDatabaseHas('submissions', [
+            'assignment_id' => $assignment->id,
+            'user_id' => $student->id,
+            'is_late' => false,
+        ]);
+    }
+
+    public function test_student_can_submit_after_deadline_when_late_submissions_are_enabled(): void
+    {
+        Storage::fake();
+        $student = User::factory()->mahasiswa()->create();
+        $course = Course::factory()->create();
+        $course->students()->attach($student->id, ['enrolled_at' => now()]);
+        $assignment = Assignment::factory()->create([
+            'course_id' => $course->id,
+            'due_at' => now()->subDay(),
+            'allow_late' => true,
+        ]);
+
+        $this->actingAs($student, 'sanctum')
+            ->postJson("/api/v1/assignments/{$assignment->id}/submissions", [
+                'file' => UploadedFile::fake()->create('tugas.pdf', 100, 'application/pdf'),
+            ])
+            ->assertCreated();
+
+        $this->assertDatabaseHas('submissions', [
+            'assignment_id' => $assignment->id,
+            'user_id' => $student->id,
+            'is_late' => true,
+        ]);
     }
 }
