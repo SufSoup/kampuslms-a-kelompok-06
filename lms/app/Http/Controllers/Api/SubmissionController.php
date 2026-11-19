@@ -41,6 +41,12 @@ class SubmissionController extends Controller
 
         $user = $request->user();
 
+        if (! $assignment->allow_late && $assignment->due_at !== null && now()->gt($assignment->due_at)) {
+            throw ValidationException::withMessages([
+                'file' => ['Batas waktu pengumpulan tugas telah berakhir dan pengumpulan terlambat tidak diizinkan.'],
+            ]);
+        }
+
         if ($assignment->submissions()
             ->where('user_id', $user->id)
             ->exists()

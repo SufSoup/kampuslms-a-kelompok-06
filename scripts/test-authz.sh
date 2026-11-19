@@ -1,15 +1,49 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP_URL="${APP_URL:-http://127.0.0.1:8000}"
+APP_URL="${APP_URL:-https://kampuslms-a-kelompok-06-production.up.railway.app}"
 APP_URL="${APP_URL%/}"
+AUTHZ_ADMIN_PASSWORD="${AUTHZ_ADMIN_PASSWORD:-}"
+AUTHZ_LECTURER_PASSWORD="${AUTHZ_LECTURER_PASSWORD:-}"
+AUTHZ_LECTURER_2_PASSWORD="${AUTHZ_LECTURER_2_PASSWORD:-}"
+AUTHZ_STUDENT_PASSWORD="${AUTHZ_STUDENT_PASSWORD:-}"
+AUTHZ_IDOR_STUDENT_PASSWORD="${AUTHZ_IDOR_STUDENT_PASSWORD:-}"
 TMP_DIR="$(mktemp -d)"
-trap 'rm -rf "$TMP_DIR"' EXIT
+
+cleanup() {
+    for token_file in "$TMP_DIR"/*-api.token; do
+        [[ -f "$token_file" ]] || continue
+
+        curl --silent --show-error --output /dev/null \
+            --request POST \
+            --header "Accept: application/json" \
+            --header "Authorization: Bearer $(cat "$token_file")" \
+            "$APP_URL/api/v1/auth/logout" || true
+    done
+
+    rm -rf "$TMP_DIR"
+}
+
+trap cleanup EXIT
 
 fail() {
     echo "[FAIL] $*" >&2
     exit 1
 }
+
+for password_name in \
+    AUTHZ_ADMIN_PASSWORD \
+    AUTHZ_LECTURER_PASSWORD \
+    AUTHZ_LECTURER_2_PASSWORD \
+    AUTHZ_STUDENT_PASSWORD \
+    AUTHZ_IDOR_STUDENT_PASSWORD
+do
+    if [[ -z "${!password_name:-}" ]]; then
+        read -r -s -p "Masukkan password ${password_name}: " "$password_name"
+        printf '\n'
+        export "$password_name"
+    fi
+done
 
 expect_status() {
     local label="$1"
@@ -34,9 +68,16 @@ expect_guest_status() {
     local expected="$2"
     local path="$3"
     local actual
+    local headers=()
+
+    if [[ "$path" == /api/* ]]; then
+        headers+=(--header "Accept: application/json")
+    fi
 
     actual="$(curl --silent --show-error --output "$TMP_DIR/guest-response.html" \
-        --write-out '%{http_code}' "$APP_URL$path")"
+        --write-out '%{http_code}' \
+        "${headers[@]}" \
+        "$APP_URL$path")"
 
     if [[ "$actual" != "$expected" ]]; then
         fail "$label: diharapkan HTTP $expected, didapat HTTP $actual ($path)"
@@ -146,11 +187,11 @@ expect_api_status() {
 }
 
 echo "[INFO] Menguji autentikasi web dan otorisasi multi-role di $APP_URL"
-login_as "admin" "admin@kampuslms.test" "password"
-login_as "dosen" "dosen@kampuslms.test" "password"
-login_as "dosen2" "budi.dosen@kampuslms.test" "password"
-login_as "mahasiswa" "mahasiswa@kampuslms.test" "password"
-login_as "mahasiswa2" "mahasiswa2@kampuslms.test" "password"
+login_as "admin" "admin@kampuslms.test" "$AUTHZ_ADMIN_PASSWORD"
+login_as "dosen" "dosen@kampuslms.test" "$AUTHZ_LECTURER_PASSWORD"
+login_as "dosen2" "budi.dosen@kampuslms.test" "$AUTHZ_LECTURER_2_PASSWORD"
+login_as "mahasiswa" "mahasiswa@kampuslms.test" "$AUTHZ_STUDENT_PASSWORD"
+login_as "mahasiswa2" "mahasiswa2@kampuslms.test" "$AUTHZ_IDOR_STUDENT_PASSWORD"
 
 ADMIN_COOKIE="$TMP_DIR/admin.cookies"
 DOSEN_COOKIE="$TMP_DIR/dosen.cookies"
@@ -158,8 +199,8 @@ DOSEN2_COOKIE="$TMP_DIR/dosen2.cookies"
 MAHASISWA_COOKIE="$TMP_DIR/mahasiswa.cookies"
 MAHASISWA2_COOKIE="$TMP_DIR/mahasiswa2.cookies"
 
-api_login_as "mahasiswa" "mahasiswa@kampuslms.test" "password"
-api_login_as "mahasiswa2" "mahasiswa2@kampuslms.test" "password"
+api_login_as "mahasiswa" "mahasiswa@kampuslms.test" "$AUTHZ_STUDENT_PASSWORD"
+api_login_as "mahasiswa2" "mahasiswa2@kampuslms.test" "$AUTHZ_IDOR_STUDENT_PASSWORD"
 expect_guest_status "Guest ditolak mengakses notifikasi API" "401" "/api/v1/notifications"
 
 curl --silent --show-error \

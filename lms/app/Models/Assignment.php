@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\DashboardCache;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,6 +12,20 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 class Assignment extends Model
 {
     use HasFactory;
+
+    protected static function booted(): void
+    {
+        static::saved(static function (Assignment $assignment): void {
+            DashboardCache::forgetAdminStats();
+            DashboardCache::forgetCourseLecturer($assignment->getRawOriginal('course_id'));
+            DashboardCache::forgetCourseLecturer($assignment->course_id);
+        });
+
+        static::deleted(static function (Assignment $assignment): void {
+            DashboardCache::forgetAdminStats();
+            DashboardCache::forgetCourseLecturer($assignment->course_id);
+        });
+    }
 
     protected $fillable = [
         'title',

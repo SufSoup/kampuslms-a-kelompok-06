@@ -1,0 +1,13 @@
+vendor
+node_modules
+.env
+.env.*
+.git
+.github
+storage/logs/*
+storage/debugbar/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/framework/testing/*
+storage/app/private

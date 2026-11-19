@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\DashboardCache;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,6 +10,19 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Grade extends Model
 {
     use HasFactory;
+
+    protected static function booted(): void
+    {
+        static::saved(static function (Grade $grade): void {
+            DashboardCache::forgetSubmissionLecturer($grade->getRawOriginal('submission_id'));
+            DashboardCache::forgetSubmissionLecturer($grade->submission_id);
+        });
+
+        static::deleted(static function (Grade $grade): void {
+            DashboardCache::forgetSubmissionLecturer($grade->getRawOriginal('submission_id'));
+            DashboardCache::forgetSubmissionLecturer($grade->submission_id);
+        });
+    }
 
     protected $fillable = [
         'score',
