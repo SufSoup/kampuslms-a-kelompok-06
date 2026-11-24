@@ -44,7 +44,19 @@ class CourseController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        return view('courses.index', compact('courses'));
+        $courseIndexRoute = match ($user->role) {
+            'admin' => 'admin.courses.index',
+            'dosen' => 'dosen.courses.index',
+            'mahasiswa' => 'mahasiswa.courses.index',
+        };
+
+        $courseShowRoute = match ($user->role) {
+            'admin' => 'admin.courses.show',
+            'dosen' => 'dosen.courses.show',
+            'mahasiswa' => 'mahasiswa.courses.show',
+        };
+
+        return view('courses.index', compact('courses', 'courseIndexRoute', 'courseShowRoute'));
     }
 
     public function create()
