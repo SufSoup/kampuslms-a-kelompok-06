@@ -156,6 +156,30 @@ class GradingWebTest extends TestCase
         ]);
     }
 
+    public function test_lecturer_from_another_course_cannot_update_an_existing_grade(): void
+    {
+        $otherLecturer = User::factory()->dosen()->create();
+        $grade = Grade::factory()->create([
+            'submission_id' => $this->submission->id,
+            'graded_by' => $this->lecturer->id,
+            'score' => 65,
+            'feedback' => 'Feedback awal.',
+        ]);
+
+        $this->actingAs($otherLecturer)
+            ->post(route('dosen.submissions.grade.store', $this->submission), [
+                'score' => 40,
+                'feedback' => 'Feedback tidak berwenang.',
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('grades', [
+            'id' => $grade->id,
+            'score' => 65,
+            'feedback' => 'Feedback awal.',
+        ]);
+    }
+
     public function test_student_can_see_their_own_grade_and_feedback_on_assignment_detail(): void
     {
         Grade::factory()->create([

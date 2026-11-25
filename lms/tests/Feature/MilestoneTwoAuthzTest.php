@@ -116,7 +116,11 @@ class MilestoneTwoAuthzTest extends TestCase
             ->assertSee($published->title)
             ->assertDontSee($draft->title);
 
-        $this->get(route('mahasiswa.assignments.show', $published))->assertOk();
+        $this->get(route('mahasiswa.assignments.show', $published))
+            ->assertOk()
+            ->assertSee($published->title)
+            ->assertSee($course->name)
+            ->assertDontSee($draft->title);
         $this->get(route('mahasiswa.assignments.show', $draft))->assertForbidden();
     }
 
@@ -147,23 +151,37 @@ class MilestoneTwoAuthzTest extends TestCase
 
     public function test_student_can_see_only_their_own_submission(): void
     {
-        $student = User::factory()->mahasiswa()->create();
-        $otherStudent = User::factory()->mahasiswa()->create();
+        $student = User::factory()->mahasiswa()->create(['name' => 'Mahasiswa Pemilik Submission']);
+        $otherStudent = User::factory()->mahasiswa()->create(['name' => 'Mahasiswa Pemilik Submission Lain']);
         $course = Course::factory()->create();
         $course->students()->attach([$student->id, $otherStudent->id], ['enrolled_at' => now()]);
-        $assignment = Assignment::factory()->create(['course_id' => $course->id]);
+        $assignment = Assignment::factory()->create([
+            'course_id' => $course->id,
+            'title' => 'Tugas Submission Privat',
+        ]);
         $ownSubmission = Submission::factory()->create([
             'assignment_id' => $assignment->id,
             'user_id' => $student->id,
+            'original_name' => 'submission-milik-saya.pdf',
+            'note' => 'Catatan untuk submission milik saya.',
         ]);
         $otherSubmission = Submission::factory()->create([
             'assignment_id' => $assignment->id,
             'user_id' => $otherStudent->id,
+            'original_name' => 'submission-mahasiswa-lain.pdf',
+            'note' => 'Catatan privat mahasiswa lain.',
         ]);
 
         $this->actingAs($student)
             ->get(route('mahasiswa.submissions.show', $ownSubmission))
-            ->assertOk();
+            ->assertOk()
+            ->assertSee($assignment->title)
+            ->assertSee($student->name)
+            ->assertSee($ownSubmission->original_name)
+            ->assertSee($ownSubmission->note)
+            ->assertDontSee($otherStudent->name)
+            ->assertDontSee($otherSubmission->original_name)
+            ->assertDontSee($otherSubmission->note);
         $this->get(route('mahasiswa.submissions.show', $otherSubmission))->assertForbidden();
     }
 
@@ -171,18 +189,50 @@ class MilestoneTwoAuthzTest extends TestCase
     {
         $lecturer = User::factory()->dosen()->create();
         $otherLecturer = User::factory()->dosen()->create();
-        $course = Course::factory()->create(['lecturer_id' => $lecturer->id]);
-        $otherCourse = Course::factory()->create(['lecturer_id' => $otherLecturer->id]);
+        $student = User::factory()->mahasiswa()->create(['name' => 'Mahasiswa Course Pengampu']);
+        $otherStudent = User::factory()->mahasiswa()->create(['name' => 'Mahasiswa Course Lain']);
+        $course = Course::factory()->create([
+            'lecturer_id' => $lecturer->id,
+            'name' => 'Course Milik Pengampu',
+        ]);
+        $otherCourse = Course::factory()->create([
+            'lecturer_id' => $otherLecturer->id,
+            'name' => 'Course Milik Dosen Lain',
+        ]);
+        $ownAssignment = Assignment::factory()->create([
+            'course_id' => $course->id,
+            'title' => 'Tugas Course Pengampu',
+        ]);
+        $otherAssignment = Assignment::factory()->create([
+            'course_id' => $otherCourse->id,
+            'title' => 'Tugas Course Dosen Lain',
+        ]);
         $ownSubmission = Submission::factory()->create([
-            'assignment_id' => Assignment::factory()->create(['course_id' => $course->id])->id,
+            'assignment_id' => $ownAssignment->id,
+            'user_id' => $student->id,
+            'original_name' => 'submission-course-pengampu.pdf',
+            'note' => 'Catatan submission course pengampu.',
         ]);
         $otherSubmission = Submission::factory()->create([
-            'assignment_id' => Assignment::factory()->create(['course_id' => $otherCourse->id])->id,
+            'assignment_id' => $otherAssignment->id,
+            'user_id' => $otherStudent->id,
+            'original_name' => 'submission-course-lain.pdf',
+            'note' => 'Catatan privat course lain.',
         ]);
 
         $this->actingAs($lecturer)
             ->get(route('dosen.submissions.show', $ownSubmission))
-            ->assertOk();
+            ->assertOk()
+            ->assertSee($ownAssignment->title)
+            ->assertSee($course->name)
+            ->assertSee($student->name)
+            ->assertSee($ownSubmission->original_name)
+            ->assertSee($ownSubmission->note)
+            ->assertDontSee($otherAssignment->title)
+            ->assertDontSee($otherCourse->name)
+            ->assertDontSee($otherStudent->name)
+            ->assertDontSee($otherSubmission->original_name)
+            ->assertDontSee($otherSubmission->note);
         $this->get(route('dosen.submissions.show', $otherSubmission))->assertForbidden();
     }
 
