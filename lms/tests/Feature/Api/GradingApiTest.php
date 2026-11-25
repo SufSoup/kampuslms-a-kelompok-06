@@ -115,6 +115,8 @@ class GradingApiTest extends TestCase
             ->assertJson([
                 'message' => 'Data yang diberikan tidak valid.',
             ]);
+
+        $this->assertDatabaseCount('submissions', 1);
     }
 
     public function test_lecturer_can_list_submissions_for_their_assignment(): void
@@ -131,7 +133,7 @@ class GradingApiTest extends TestCase
             'created_by' => $lecturer->id,
         ]);
 
-        Submission::factory()->create([
+        $submission = Submission::factory()->create([
             'assignment_id' => $assignment->id,
             'user_id' => $student->id,
         ]);
@@ -141,7 +143,8 @@ class GradingApiTest extends TestCase
 
         $response
             ->assertOk()
-            ->assertJsonCount(1, 'data');
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $submission->id);
     }
 
     public function test_other_lecturer_cannot_list_submissions(): void
@@ -289,6 +292,43 @@ class GradingApiTest extends TestCase
             ->assertJson([
                 'message' => 'Anda tidak memiliki akses ke sumber daya ini.',
             ]);
+    }
+
+    public function test_other_lecturer_cannot_update_an_existing_grade(): void
+    {
+        $lecturer = User::factory()->dosen()->create();
+        $otherLecturer = User::factory()->dosen()->create();
+        $student = User::factory()->mahasiswa()->create();
+        $course = Course::factory()->create([
+            'lecturer_id' => $lecturer->id,
+        ]);
+        $assignment = Assignment::factory()->create([
+            'course_id' => $course->id,
+            'created_by' => $lecturer->id,
+        ]);
+        $submission = Submission::factory()->create([
+            'assignment_id' => $assignment->id,
+            'user_id' => $student->id,
+        ]);
+        $grade = Grade::factory()->create([
+            'submission_id' => $submission->id,
+            'graded_by' => $lecturer->id,
+            'score' => 65,
+            'feedback' => 'Feedback awal.',
+        ]);
+
+        $this->actingAs($otherLecturer, 'sanctum')
+            ->putJson("/api/v1/submissions/{$submission->id}/grade", [
+                'score' => 40,
+                'feedback' => 'Feedback tidak berwenang.',
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('grades', [
+            'id' => $grade->id,
+            'score' => 65,
+            'feedback' => 'Feedback awal.',
+        ]);
     }
 
     public function test_grade_score_cannot_exceed_100(): void

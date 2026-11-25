@@ -64,6 +64,26 @@ class DashboardCachingTest extends TestCase
         $this->assertFalse(Cache::has(DashboardCache::ADMIN_STATS_KEY));
     }
 
+    public function test_deleting_assignment_invalidates_admin_dashboard_statistics(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $lecturer = User::factory()->dosen()->create();
+        $course = Course::factory()->create(['lecturer_id' => $lecturer->id]);
+        $assignment = Assignment::factory()->create([
+            'course_id' => $course->id,
+            'created_by' => $lecturer->id,
+        ]);
+
+        $this->actingAs($admin)->get(route('dashboard'))->assertOk();
+        $this->assertSame(1, Cache::get(DashboardCache::ADMIN_STATS_KEY)['assignments']);
+
+        $assignment->delete();
+        $this->assertFalse(Cache::has(DashboardCache::ADMIN_STATS_KEY));
+
+        $this->get(route('dashboard'))->assertOk();
+        $this->assertSame(0, Cache::get(DashboardCache::ADMIN_STATS_KEY)['assignments']);
+    }
+
     public function test_lecturer_course_cache_is_isolated_and_includes_expected_counts(): void
     {
         $lecturer = User::factory()->dosen()->create();
