@@ -10,12 +10,12 @@ Proyek ini adalah implementasi tugas Modul 1 (Mengenal Laravel 12) untuk pengemb
 
 ## Daftar Anggota
 
-| Nama Lengkap | NIM |
-| :--- | :--- |
-| Muhammad Ikhsyan | 10241049 |
-| Muhammad Farraz Kanz | 10241047 |
-| Muhammad Syahid Ridho | 10241051 |
-| Muhammad Yusuf Pratama | 10241053 |
+| Nama Lengkap | NIM | Peran Utama & Fokus Kontribusi |
+| :--- | :--- | :--- |
+| Muhammad Ikhsyan | 10241049 | Fitur Diferensiasi (Fitur 17: Kurasi Sumber Belajar & Penanda Baca), Auth & Route Peran, Strict Lazy Loading & Optimasi Rekap Nilai, Docker & Deployment Produksi |
+| Muhammad Farraz Kanz | 10241047 | Validasi Form Request, Pengelolaan Berkas Privat & Anti-IDOR Unduhan, Index Database Performa, Security Audit Produksi & Redesain UI |
+| Muhammad Syahid Ridho | 10241051 | Model & Migrasi Inti LMS, Otorisasi IDOR Assignment & Submission, Modul Penilaian Berbasis Web, Dashboard Caching & Invalidasi Otomatis |
+| Muhammad Yusuf Pratama | 10241053 | Pengelolaan Course Enrollment, Seeder Akun Demo, Keandalan Queue Worker Notifikasi, Standardisasi Pagination & Laporan Benchmark |
 
 ## Cara Instalasi
 

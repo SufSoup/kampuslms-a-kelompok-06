@@ -1,18 +1,4 @@
 <x-layout title="Daftar Mata Kuliah — KampusLMS">
-    @php
-        $courseIndexRoute = match (auth()->user()->role) {
-            'admin' => 'admin.courses.index',
-            'dosen' => 'dosen.courses.index',
-            'mahasiswa' => 'mahasiswa.courses.index',
-        };
-
-        $courseShowRoute = match (auth()->user()->role) {
-            'admin' => 'admin.courses.show',
-            'dosen' => 'dosen.courses.show',
-            'mahasiswa' => 'mahasiswa.courses.show',
-        };
-    @endphp
-
     <div class="page-header page-header-row">
         <div>
             <h1 class="page-title">Daftar Mata Kuliah</h1>
